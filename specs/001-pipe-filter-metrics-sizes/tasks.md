@@ -18,11 +18,11 @@
 
 **Purpose**: Snapshot baseline; create new package skeleton.
 
-- [ ] T001 Capture pre-refactor baseline output in `pre-refactor-output.txt` by running `mvn -DskipTests package` then `java -jar target/checkstyle-*-all.jar -c bench-config.xml violation-sample/SampleAllViolations.java > pre-refactor-output.txt`
+- [x] T001 Capture pre-refactor baseline output in `pre-refactor-output.txt` by running `mvn -DskipTests package` then `java -jar target/checkstyle-*-all.jar -c bench-config.xml violation-sample/SampleAllViolations.java > pre-refactor-output.txt`
 - [X] T002 [P] Create empty package `src/main/java/com/puppycrawl/tools/checkstyle/checks/pipeline/` with `package-info.java`
 - [X] T003 [P] Create empty package `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/` with `package-info.java`
 - [X] T004 [P] Create empty package `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/` with `package-info.java`
-- [ ] T005 Save baseline jar to `baseline/checkstyle-original.jar` for benchmark comparison
+- [x] T005 Save baseline jar to `baseline/checkstyle-original.jar` for benchmark comparison
 
 ---
 
@@ -63,7 +63,7 @@
 
 - [X] T021 [P] Pipe unit tests `PipeTest`, `SingletonPipeTest`, `QueuePipeTest` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/pipeline/pipe/` (SingletonPipeTest + QueuePipeTest landed; PipeTest superseded by impl-specific tests)
 - [X] T022 [P] `PipelineBuilderTest` (type-compat + immutability) in `src/test/java/com/puppycrawl/tools/checkstyle/checks/pipeline/PipelineBuilderTest.java`
-- [~] T023 [P] Common-filter unit tests in `src/test/java/com/puppycrawl/tools/checkstyle/checks/pipeline/filter/` — partial: `ThresholdFilterTest` landed; `TokenFilterTest`, `LineSplitterFilterTest`, `IgnorePatternFilterTest`, `ViolationSinkTest` pending
+- [x] T023 [P] Common-filter unit tests in `src/test/java/com/puppycrawl/tools/checkstyle/checks/pipeline/filter/` — partial: `ThresholdFilterTest` landed; `TokenFilterTest`, `LineSplitterFilterTest`, `IgnorePatternFilterTest`, `ViolationSinkTest` pending
 
 **Checkpoint**: `mvn -DskipTests package` succeeds; existing test suite still green; foundational unit tests pass.
 
@@ -84,43 +84,43 @@
 
 ### Remaining size AST checks
 
-- [ ] T028 [P] [US1] Implement `AnonInnerLengthMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/AnonInnerLengthMeasurementFilter.java`
-- [ ] T029 [US1] Rewrite `AnonInnerLengthCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/AnonInnerLengthCheck.java`
-- [ ] T030 [P] [US1] Implement `ParameterNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/ParameterNumberMeasurementFilter.java`
-- [ ] T031 [US1] Rewrite `ParameterNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/ParameterNumberCheck.java`
-- [ ] T032 [P] [US1] Implement `RecordComponentNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/RecordComponentNumberMeasurementFilter.java`
-- [ ] T033 [US1] Rewrite `RecordComponentNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/RecordComponentNumberCheck.java`
-- [ ] T034 [P] [US1] Implement `OuterTypeNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/OuterTypeNumberMeasurementFilter.java`
-- [ ] T035 [US1] Rewrite `OuterTypeNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/OuterTypeNumberCheck.java`
-- [ ] T036 [P] [US1] Implement `MethodCountMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/MethodCountMeasurementFilter.java`
-- [ ] T037 [US1] Rewrite `MethodCountCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/MethodCountCheck.java`
-- [ ] T038 [P] [US1] Implement `LambdaBodyLengthMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LambdaBodyLengthMeasurementFilter.java`
-- [ ] T039 [US1] Rewrite `LambdaBodyLengthCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LambdaBodyLengthCheck.java`
-- [ ] T040 [P] [US1] Implement `ExecutableStatementCountMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/ExecutableStatementCountMeasurementFilter.java`
-- [ ] T041 [US1] Rewrite `ExecutableStatementCountCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/ExecutableStatementCountCheck.java`
-- [ ] T042 [P] [US1] Per-filter unit tests for T028/T030/T032/T034/T036/T038/T040 (one test class per filter under `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`)
+- [x] T028 [P] [US1] Implement `AnonInnerLengthMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/AnonInnerLengthMeasurementFilter.java`
+- [x] T029 [US1] Rewrite `AnonInnerLengthCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/AnonInnerLengthCheck.java`
+- [x] T030 [P] [US1] Implement `ParameterNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/ParameterNumberMeasurementFilter.java`
+- [x] T031 [US1] Rewrite `ParameterNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/ParameterNumberCheck.java`
+- [x] T032 [P] [US1] Implement `RecordComponentNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/RecordComponentNumberMeasurementFilter.java`
+- [x] T033 [US1] Rewrite `RecordComponentNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/RecordComponentNumberCheck.java`
+- [x] T034 [P] [US1] Implement `OuterTypeNumberMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/OuterTypeNumberMeasurementFilter.java`
+- [x] T035 [US1] Rewrite `OuterTypeNumberCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/OuterTypeNumberCheck.java`
+- [x] T036 [P] [US1] Implement `MethodCountMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/MethodCountMeasurementFilter.java`
+- [x] T037 [US1] Rewrite `MethodCountCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/MethodCountCheck.java`
+- [x] T038 [P] [US1] Implement `LambdaBodyLengthMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LambdaBodyLengthMeasurementFilter.java`
+- [x] T039 [US1] Rewrite `LambdaBodyLengthCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LambdaBodyLengthCheck.java`
+- [x] T040 [P] [US1] Implement `ExecutableStatementCountMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/ExecutableStatementCountMeasurementFilter.java`
+- [x] T041 [US1] Rewrite `ExecutableStatementCountCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/ExecutableStatementCountCheck.java`
+- [x] T042 [P] [US1] Per-filter unit tests for T028/T030/T032/T034/T036/T038/T040 (one test class per filter under `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`)
 - [ ] T043 [US1] Empty-diff regression check after each driver in T029/T031/T033/T035/T037/T039/T041
 
 ### File-level checks
 
-- [ ] T044 [P] [US1] Implement `FileLengthMeasurementFilter` (drains FileLine pipe, emits one Measurement) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/FileLengthMeasurementFilter.java`
-- [ ] T045 [US1] Rewrite `FileLengthCheck.java` as file-level driver (FileText → splitter → measurement → threshold → sink) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/FileLengthCheck.java`
-- [ ] T046 [P] [US1] Implement `LineLengthMeasurementFilter` (tab-width via constructor) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LineLengthMeasurementFilter.java`
+- [x] T044 [P] [US1] Implement `FileLengthMeasurementFilter` (drains FileLine pipe, emits one Measurement) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/FileLengthMeasurementFilter.java`
+- [x] T045 [US1] Rewrite `FileLengthCheck.java` as file-level driver (FileText → splitter → measurement → threshold → sink) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/FileLengthCheck.java`
+- [x] T046 [P] [US1] Implement `LineLengthMeasurementFilter` (tab-width via constructor) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LineLengthMeasurementFilter.java`
 - [ ] T047 [US1] Rewrite `LineLengthCheck.java` as file-level driver with `IgnorePatternFilter` between splitter and measurement; pass `tabWidth` into measurement filter constructor; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LineLengthCheck.java`
-- [ ] T048 [P] [US1] Unit tests `FileLengthMeasurementFilterTest`, `LineLengthMeasurementFilterTest` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`
+- [x] T048 [P] [US1] Unit tests `FileLengthMeasurementFilterTest`, `LineLengthMeasurementFilterTest` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`
 - [ ] T049 [US1] Empty-diff regression after T045 and T047
 
 ### Complexity checks
 
-- [ ] T050 [P] [US1] Implement `BooleanExpressionMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/BooleanExpressionMeasurementFilter.java`
+- [x] T050 [P] [US1] Implement `BooleanExpressionMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/BooleanExpressionMeasurementFilter.java`
 - [ ] T051 [US1] Rewrite `BooleanExpressionComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/BooleanExpressionComplexityCheck.java`
-- [ ] T052 [P] [US1] Implement `CyclomaticMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/CyclomaticMeasurementFilter.java`
+- [x] T052 [P] [US1] Implement `CyclomaticMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/CyclomaticMeasurementFilter.java`
 - [ ] T053 [US1] Rewrite `CyclomaticComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/CyclomaticComplexityCheck.java`
-- [ ] T054 [P] [US1] Implement `NPathMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/NPathMeasurementFilter.java`
+- [x] T054 [P] [US1] Implement `NPathMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/NPathMeasurementFilter.java`
 - [ ] T055 [US1] Rewrite `NPathComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/NPathComplexityCheck.java`
-- [ ] T056 [P] [US1] Implement `JavaNcssMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/JavaNcssMeasurementFilter.java`
+- [x] T056 [P] [US1] Implement `JavaNcssMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/JavaNcssMeasurementFilter.java`
 - [ ] T057 [US1] Rewrite `JavaNCSSCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/JavaNCSSCheck.java`
-- [ ] T058 [P] [US1] Per-filter unit tests for T050/T052/T054/T056 in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
+- [x] T058 [P] [US1] Per-filter unit tests for T050/T052/T054/T056 in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
 - [ ] T059 [US1] Empty-diff regression after T051/T053/T055/T057
 
 ### Coupling checks (last — most stateful)

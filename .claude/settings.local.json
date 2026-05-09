@@ -48,7 +48,13 @@
       "Bash(mvn surefire:test -Dtest='ExecutableStatementCountCheckTest')",
       "Bash(mvn surefire:test -Dtest='com.puppycrawl.tools.checkstyle.checks.sizes.*Test,com.puppycrawl.tools.checkstyle.checks.metrics.*Test')",
       "Bash(mvn surefire:test -Dtest='com.puppycrawl.tools.checkstyle.checks.metrics.*Test')",
-      "Bash(mvn surefire:test -Dtest='FileLengthCheckTest')"
+      "Bash(mvn surefire:test -Dtest='FileLengthCheckTest')",
+      "Bash(pwsh -NoProfile -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(mvn test *)",
+      "Bash(git show *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit *)"
     ]
   }
 }
