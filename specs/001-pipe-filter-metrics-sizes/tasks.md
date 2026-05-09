@@ -106,7 +106,7 @@
 - [x] T044 [P] [US1] Implement `FileLengthMeasurementFilter` (drains FileLine pipe, emits one Measurement) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/FileLengthMeasurementFilter.java`
 - [x] T045 [US1] Rewrite `FileLengthCheck.java` as file-level driver (FileText → splitter → measurement → threshold → sink) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/FileLengthCheck.java`
 - [x] T046 [P] [US1] Implement `LineLengthMeasurementFilter` (tab-width via constructor) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LineLengthMeasurementFilter.java`
-- [ ] T047 [US1] Rewrite `LineLengthCheck.java` as file-level driver with `IgnorePatternFilter` between splitter and measurement; pass `tabWidth` into measurement filter constructor; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LineLengthCheck.java`
+- [x] T047 [US1] Rewrite `LineLengthCheck.java` as file-level driver with `IgnorePatternFilter` between splitter and measurement; pass `tabWidth` into measurement filter constructor; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LineLengthCheck.java`
 - [x] T048 [P] [US1] Unit tests `FileLengthMeasurementFilterTest`, `LineLengthMeasurementFilterTest` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`
 - [ ] T049 [US1] Empty-diff regression after T045 and T047
 
@@ -119,7 +119,7 @@
 - [x] T054 [P] [US1] Implement `NPathMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/NPathMeasurementFilter.java`
 - [x] T055 [US1] Rewrite `NPathComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/NPathComplexityCheck.java`
 - [x] T056 [P] [US1] Implement `JavaNcssMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/JavaNcssMeasurementFilter.java`
-- [ ] T057 [US1] Rewrite `JavaNCSSCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/JavaNCSSCheck.java`
+- [x] T057 [US1] Rewrite `JavaNCSSCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/JavaNCSSCheck.java`
 - [x] T058 [P] [US1] Per-filter unit tests for T050/T052/T054/T056 in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
 - [ ] T059 [US1] Empty-diff regression after T051/T053/T055/T057
 

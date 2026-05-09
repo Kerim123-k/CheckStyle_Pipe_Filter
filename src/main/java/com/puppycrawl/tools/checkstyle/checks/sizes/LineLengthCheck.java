@@ -25,7 +25,14 @@ import java.util.regex.Pattern;
 import com.puppycrawl.tools.checkstyle.StatelessCheck;
 import com.puppycrawl.tools.checkstyle.api.AbstractFileSetCheck;
 import com.puppycrawl.tools.checkstyle.api.FileText;
-import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.Pipeline;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.PipelineBuilder;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.IgnorePatternFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.LineSplitterFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ThresholdFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ViolationSink;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.message.ViolationMessage;
+import com.puppycrawl.tools.checkstyle.checks.sizes.pipeline.LineLengthMeasurementFilter;
 
 /**
  * <div>
@@ -83,14 +90,19 @@ public class LineLengthCheck extends AbstractFileSetCheck {
 
     @Override
     protected void processFiltered(File file, FileText fileText) {
-        for (int i = 0; i < fileText.size(); i++) {
-            final String line = fileText.get(i);
-            final int realLength = CommonUtil.lengthExpandedTabs(
-                line, line.codePointCount(0, line.length()), getTabWidth());
+        final Pipeline<FileText, ViolationMessage> pipeline = PipelineBuilder.<FileText>start()
+                .addQueued(new LineSplitterFilter())
+                .addQueued(new IgnorePatternFilter(ignorePattern))
+                .addQueued(new LineLengthMeasurementFilter(getTabWidth(), max, MSG_KEY))
+                .addQueued(new ThresholdFilter(max))
+                .addQueued(new ViolationSink())
+                .build();
 
-            if (realLength > max && !ignorePattern.matcher(line).find()) {
-                log(i + 1, MSG_KEY, max, realLength);
-            }
+        pipeline.submit(fileText);
+
+        while (pipeline.hasResults()) {
+            final ViolationMessage v = pipeline.drain();
+            log(v.getLine(), v.getMessageKey(), v.getArgs());
         }
     }
 
