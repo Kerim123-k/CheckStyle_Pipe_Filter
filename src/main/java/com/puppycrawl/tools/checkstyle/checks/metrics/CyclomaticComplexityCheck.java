@@ -19,15 +19,18 @@
 
 package com.puppycrawl.tools.checkstyle.checks.metrics;
 
-import java.math.BigInteger;
-import java.util.ArrayDeque;
-import java.util.Deque;
-
 import com.puppycrawl.tools.checkstyle.FileStatefulCheck;
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
-import com.puppycrawl.tools.checkstyle.utils.ScopeUtil;
+import com.puppycrawl.tools.checkstyle.checks.metrics.pipeline.CyclomaticMeasurementFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.Pipeline;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.PipelineBuilder;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ThresholdFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.TokenFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ViolationSink;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.message.AstEvent;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.message.ViolationMessage;
 
 /**
  * <div>
@@ -85,23 +88,17 @@ public class CyclomaticComplexityCheck
      */
     public static final String MSG_KEY = "cyclomaticComplexity";
 
-    /** The initial current value. */
-    private static final BigInteger INITIAL_VALUE = BigInteger.ONE;
-
     /** Default allowed complexity. */
     private static final int DEFAULT_COMPLEXITY_VALUE = 10;
-
-    /** Stack of values - all but the current value. */
-    private final Deque<BigInteger> valueStack = new ArrayDeque<>();
 
     /** Control whether to treat the whole switch block as a single decision point. */
     private boolean switchBlockAsSingleDecisionPoint;
 
-    /** The current value. */
-    private BigInteger currentValue = INITIAL_VALUE;
-
     /** Specify the maximum threshold allowed. */
     private int max = DEFAULT_COMPLEXITY_VALUE;
+
+    /** Pipeline driving the per-token measurement + threshold + sink chain. */
+    private Pipeline<AstEvent, ViolationMessage> pipeline;
 
     /**
      * Setter to control whether to treat the whole switch block as a single decision point.
@@ -180,88 +177,34 @@ public class CyclomaticComplexityCheck
     }
 
     @Override
-    public void visitToken(DetailAST ast) {
-        switch (ast.getType()) {
-            case TokenTypes.CTOR_DEF,
-                 TokenTypes.METHOD_DEF,
-                 TokenTypes.INSTANCE_INIT,
-                 TokenTypes.STATIC_INIT,
-                 TokenTypes.COMPACT_CTOR_DEF -> visitMethodDef();
+    public void beginTree(DetailAST rootAST) {
+        pipeline = PipelineBuilder.<AstEvent>start()
+                .add(new TokenFilter(getAcceptableTokens()))
+                .add(new CyclomaticMeasurementFilter(
+                        switchBlockAsSingleDecisionPoint, max, MSG_KEY))
+                .add(new ThresholdFilter(max))
+                .addQueued(new ViolationSink())
+                .build();
+    }
 
-            default -> visitTokenHook(ast);
-        }
+    @Override
+    public void visitToken(DetailAST ast) {
+        pipeline.submit(new AstEvent(ast, AstEvent.Phase.VISIT));
+        drainAndLog();
     }
 
     @Override
     public void leaveToken(DetailAST ast) {
-        switch (ast.getType()) {
-            case TokenTypes.CTOR_DEF,
-                 TokenTypes.METHOD_DEF,
-                 TokenTypes.INSTANCE_INIT,
-                 TokenTypes.STATIC_INIT,
-                 TokenTypes.COMPACT_CTOR_DEF -> leaveMethodDef(ast);
+        pipeline.submit(new AstEvent(ast, AstEvent.Phase.LEAVE));
+        drainAndLog();
+    }
 
-            default -> {
-                // Do nothing
-            }
+    /** Drain sink, forward each violation to the framework log. */
+    private void drainAndLog() {
+        while (pipeline.hasResults()) {
+            final ViolationMessage v = pipeline.drain();
+            log(v.getLine(), v.getCol(), v.getMessageKey(), v.getArgs());
         }
-    }
-
-    /**
-     * Hook called when visiting a token. Will not be called the method
-     * definition tokens.
-     *
-     * @param ast the token being visited
-     */
-    private void visitTokenHook(DetailAST ast) {
-        if (switchBlockAsSingleDecisionPoint) {
-            if (!ScopeUtil.isInBlockOf(ast, TokenTypes.LITERAL_SWITCH)) {
-                incrementCurrentValue(BigInteger.ONE);
-            }
-        }
-        else if (ast.getType() != TokenTypes.LITERAL_SWITCH) {
-            incrementCurrentValue(BigInteger.ONE);
-        }
-    }
-
-    /**
-     * Process the end of a method definition.
-     *
-     * @param ast the token representing the method definition
-     */
-    private void leaveMethodDef(DetailAST ast) {
-        final BigInteger bigIntegerMax = BigInteger.valueOf(max);
-        if (currentValue.compareTo(bigIntegerMax) > 0) {
-            log(ast, MSG_KEY, currentValue, bigIntegerMax);
-        }
-        popValue();
-    }
-
-    /**
-     * Increments the current value by a specified amount.
-     *
-     * @param amount the amount to increment by
-     */
-    private void incrementCurrentValue(BigInteger amount) {
-        currentValue = currentValue.add(amount);
-    }
-
-    /** Push the current value on the stack. */
-    private void pushValue() {
-        valueStack.push(currentValue);
-        currentValue = INITIAL_VALUE;
-    }
-
-    /**
-     * Pops a value off the stack and makes it the current value.
-     */
-    private void popValue() {
-        currentValue = valueStack.pop();
-    }
-
-    /** Process the start of the method definition. */
-    private void visitMethodDef() {
-        pushValue();
     }
 
 }

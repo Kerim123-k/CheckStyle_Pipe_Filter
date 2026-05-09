@@ -113,11 +113,11 @@
 ### Complexity checks
 
 - [x] T050 [P] [US1] Implement `BooleanExpressionMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/BooleanExpressionMeasurementFilter.java`
-- [ ] T051 [US1] Rewrite `BooleanExpressionComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/BooleanExpressionComplexityCheck.java`
+- [x] T051 [US1] Rewrite `BooleanExpressionComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/BooleanExpressionComplexityCheck.java`
 - [x] T052 [P] [US1] Implement `CyclomaticMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/CyclomaticMeasurementFilter.java`
-- [ ] T053 [US1] Rewrite `CyclomaticComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/CyclomaticComplexityCheck.java`
+- [x] T053 [US1] Rewrite `CyclomaticComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/CyclomaticComplexityCheck.java`
 - [x] T054 [P] [US1] Implement `NPathMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/NPathMeasurementFilter.java`
-- [ ] T055 [US1] Rewrite `NPathComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/NPathComplexityCheck.java`
+- [x] T055 [US1] Rewrite `NPathComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/NPathComplexityCheck.java`
 - [x] T056 [P] [US1] Implement `JavaNcssMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/JavaNcssMeasurementFilter.java`
 - [ ] T057 [US1] Rewrite `JavaNCSSCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/JavaNCSSCheck.java`
 - [x] T058 [P] [US1] Per-filter unit tests for T050/T052/T054/T056 in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
