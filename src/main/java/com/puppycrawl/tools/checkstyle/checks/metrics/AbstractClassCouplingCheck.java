@@ -52,7 +52,12 @@ public abstract class AbstractClassCouplingCheck extends AbstractCheck {
     private static final char DOT = '.';
 
     /** Class names to ignore. */
-    private static final Set<String> DEFAULT_EXCLUDED_CLASSES = Set.of(
+    /**
+     * Default class names to ignore. Package-visible so the pipeline drivers
+     * (which no longer extend this helper but still need the same defaults)
+     * can reuse the constant without copying it.
+     */
+    static final Set<String> DEFAULT_EXCLUDED_CLASSES = Set.of(
         // reserved type name
         "var",
         // primitives
@@ -82,7 +87,8 @@ public abstract class AbstractClassCouplingCheck extends AbstractCheck {
     );
 
     /** Package names to ignore. */
-    private static final Set<String> DEFAULT_EXCLUDED_PACKAGES = Collections.emptySet();
+    /** Default package names to ignore. Exposed for the same reason as {@link #DEFAULT_EXCLUDED_CLASSES}. */
+    static final Set<String> DEFAULT_EXCLUDED_PACKAGES = Collections.emptySet();
 
     /** Pattern to match brackets in a full type name. */
     private static final Pattern BRACKET_PATTERN = Pattern.compile("\\[[^]]*]");

@@ -125,17 +125,17 @@
 
 ### Coupling checks (last — most stateful)
 
-- [ ] T060 [US1] Retain `AbstractClassCouplingCheck` as private helper for coupling drivers; pull measurement bodies out, leave type-resolution helpers in place; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/AbstractClassCouplingCheck.java`
-- [ ] T061 [P] [US1] Implement `ImportTrackingFilter` (observes IMPORT/PACKAGE_DEF, passthrough) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/ImportTrackingFilter.java`
-- [ ] T062 [US1] Implement `AbstractCouplingMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/AbstractCouplingMeasurementFilter.java` (depends on T060, T061)
-- [ ] T063 [P] [US1] Implement `ClassDataAbstractionCouplingMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/ClassDataAbstractionCouplingMeasurementFilter.java`
-- [ ] T064 [US1] Rewrite `ClassDataAbstractionCouplingCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassDataAbstractionCouplingCheck.java`
-- [ ] T065 [P] [US1] Implement `ClassFanOutComplexityMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/ClassFanOutComplexityMeasurementFilter.java`
-- [ ] T066 [US1] Rewrite `ClassFanOutComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassFanOutComplexityCheck.java`
+- [x] T060 [US1] Retain `AbstractClassCouplingCheck` as helper; expose `DEFAULT_EXCLUDED_CLASSES`/`DEFAULT_EXCLUDED_PACKAGES` package-visibly so the rewritten drivers can reuse defaults without copying. Class is now orphan (no subclasses) but kept per FR-014; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/AbstractClassCouplingCheck.java`
+- [~] T061 [P] [US1] `ImportTrackingFilter` deferred — IMPORT/PACKAGE_DEF tracking already lives inside `CouplingMeasurementFilter` and is not consumed by other checks, so a separate passthrough stage adds no value. Reopen if a second consumer appears.
+- [~] T062 [US1] `AbstractCouplingMeasurementFilter` deferred — the existing parameterized `CouplingMeasurementFilter` covers both coupling checks via constructor args (logMessageId + max + exclusion sets). No abstract base needed.
+- [~] T063 [P] [US1] `ClassDataAbstractionCouplingMeasurementFilter` deferred — supplied by parameterizing `CouplingMeasurementFilter` (see T062).
+- [x] T064 [US1] Rewrite `ClassDataAbstractionCouplingCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassDataAbstractionCouplingCheck.java`
+- [~] T065 [P] [US1] `ClassFanOutComplexityMeasurementFilter` deferred — supplied by parameterizing `CouplingMeasurementFilter` (see T062).
+- [x] T066 [US1] Rewrite `ClassFanOutComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassFanOutComplexityCheck.java`
 - [ ] T067 [P] [US1] Unit tests for `ImportTrackingFilter`, `ClassDataAbstractionCouplingMeasurementFilter`, `ClassFanOutComplexityMeasurementFilter` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
 - [ ] T068 [US1] Empty-diff regression after T064 and T066
-- [ ] T069 [US1] Implement `RegressionDiffTest` (re-runs jar on `SampleAllViolations.java`, asserts byte-equal output to `pre-refactor-output.txt`) in `src/test/java/com/puppycrawl/tools/checkstyle/RegressionDiffTest.java`
-- [ ] T070 [US1] Per-check fire test: each of 16 checks fires ≥1 violation on bundled sample input; in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PerCheckFireTest.java`
+- [x] T069 [US1] Implement `RegressionDiffTest` (re-runs jar on `SampleAllViolations.java`, asserts byte-equal output to `pre-refactor-output.txt`) in `src/test/java/com/puppycrawl/tools/checkstyle/RegressionDiffTest.java`
+- [x] T070 [US1] Per-check fire test: each of 16 checks fires ≥1 violation on bundled sample input; in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PerCheckFireTest.java`
 
 **Checkpoint**: All 16 drivers migrated; baseline diff = 0; full Maven suite green. MVP done.
 

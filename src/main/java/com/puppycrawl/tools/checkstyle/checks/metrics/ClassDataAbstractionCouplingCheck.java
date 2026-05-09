@@ -19,9 +19,26 @@
 
 package com.puppycrawl.tools.checkstyle.checks.metrics;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
+import com.puppycrawl.tools.checkstyle.FileStatefulCheck;
+import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
+import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
+import com.puppycrawl.tools.checkstyle.checks.metrics.pipeline.CouplingMeasurementFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.Pipeline;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.PipelineBuilder;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ThresholdFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.TokenFilter;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.filter.ViolationSink;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.message.AstEvent;
+import com.puppycrawl.tools.checkstyle.checks.pipeline.message.ViolationMessage;
+import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
 
 /**
  * <div>
@@ -33,59 +50,10 @@ import com.puppycrawl.tools.checkstyle.api.TokenTypes;
  * the more complex the structure of the class.
  * </div>
  *
- * <p>
- * This check processes files in the following way:
- * </p>
- * <ol>
- * <li>
- * Iterates over the list of tokens (defined below) and counts all mentioned classes.
- * <ul>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#IMPORT">
- * PACKAGE_DEF</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#IMPORT">
- * IMPORT</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#CLASS_DEF">
- * CLASS_DEF</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#INTERFACE_DEF">
- * INTERFACE_DEF</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#ENUM_DEF">
- * ENUM_DEF</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#LITERAL_NEW">
- * LITERAL_NEW</a>
- * </li>
- * <li>
- * <a href="https://checkstyle.org/apidocs/com/puppycrawl/tools/checkstyle/api/TokenTypes.html#RECORD_DEF">
- * RECORD_DEF</a>
- * </li>
- * </ul>
- * </li>
- * <li>
- * If a class was imported with direct import (i.e. {@code import java.math.BigDecimal}),
- * or the class was referenced with the package name (i.e. {@code java.math.BigDecimal value})
- * and the package was added to the {@code excludedPackages} parameter, the class
- * does not increase complexity.
- * </li>
- * <li>
- * If a class name was added to the {@code excludedClasses} parameter,
- * the class does not increase complexity.
- * </li>
- * </ol>
- *
  * @since 3.4
  */
-public final class ClassDataAbstractionCouplingCheck
-    extends AbstractClassCouplingCheck {
+@FileStatefulCheck
+public final class ClassDataAbstractionCouplingCheck extends AbstractCheck {
 
     /**
      * A key is pointing to the warning message text in "messages.properties"
@@ -96,9 +64,29 @@ public final class ClassDataAbstractionCouplingCheck
     /** Default allowed complexity. */
     private static final int DEFAULT_MAX = 7;
 
-    /** Creates bew instance of the check. */
+    /** Specify the maximum threshold allowed. */
+    private int max = DEFAULT_MAX;
+
+    /** Specify user-configured class names to ignore. */
+    private Set<String> excludedClasses = AbstractClassCouplingCheck.DEFAULT_EXCLUDED_CLASSES;
+
+    /** Specify user-configured packages to ignore. */
+    private Set<String> excludedPackages = AbstractClassCouplingCheck.DEFAULT_EXCLUDED_PACKAGES;
+
+    /** Specify user-configured regular expressions to ignore classes. */
+    private final List<Pattern> excludeClassesRegexps = new ArrayList<>();
+
+    /** Pipeline driving the per-token measurement + threshold + sink chain. */
+    private Pipeline<AstEvent, ViolationMessage> pipeline;
+
+    /** Creates new instance of the check. */
     public ClassDataAbstractionCouplingCheck() {
-        super(DEFAULT_MAX);
+        excludeClassesRegexps.add(CommonUtil.createPattern("^$"));
+    }
+
+    @Override
+    public int[] getDefaultTokens() {
+        return getRequiredTokens();
     }
 
     @Override
@@ -119,20 +107,13 @@ public final class ClassDataAbstractionCouplingCheck
         return getRequiredTokens();
     }
 
-    @Override
-    protected String getLogMessageId() {
-        return MSG_KEY;
-    }
-
     /**
-     * Setter to specify user-configured regular expressions to ignore classes.
+     * Setter to specify the maximum threshold allowed.
      *
-     * @param from array representing regular expressions of classes to ignore.
-     * @propertySince 7.7
+     * @param max allowed complexity.
      */
-    @Override
-    public void setExcludeClassesRegexps(Pattern... from) {
-        super.setExcludeClassesRegexps(from);
+    public void setMax(int max) {
+        this.max = max;
     }
 
     /**
@@ -141,9 +122,18 @@ public final class ClassDataAbstractionCouplingCheck
      * @param excludedClasses classes to ignore.
      * @propertySince 5.7
      */
-    @Override
     public void setExcludedClasses(String... excludedClasses) {
-        super.setExcludedClasses(excludedClasses);
+        this.excludedClasses = Set.of(excludedClasses);
+    }
+
+    /**
+     * Setter to specify user-configured regular expressions to ignore classes.
+     *
+     * @param from array representing regular expressions of classes to ignore.
+     * @propertySince 7.7
+     */
+    public void setExcludeClassesRegexps(Pattern... from) {
+        excludeClassesRegexps.addAll(Arrays.asList(from));
     }
 
     /**
@@ -153,9 +143,49 @@ public final class ClassDataAbstractionCouplingCheck
      * @throws IllegalArgumentException if there are invalid identifiers among the packages.
      * @propertySince 7.7
      */
-    @Override
     public void setExcludedPackages(String... excludedPackages) {
-        super.setExcludedPackages(excludedPackages);
+        final List<String> invalidIdentifiers = Arrays.stream(excludedPackages)
+            .filter(Predicate.not(CommonUtil::isName))
+            .toList();
+        if (!invalidIdentifiers.isEmpty()) {
+            throw new IllegalArgumentException(
+                "the following values are not valid identifiers: " + invalidIdentifiers);
+        }
+        this.excludedPackages = Set.of(excludedPackages);
+    }
+
+    @Override
+    public void beginTree(DetailAST rootAST) {
+        pipeline = PipelineBuilder.<AstEvent>start()
+                .add(new TokenFilter(getRequiredTokens()))
+                .add(new CouplingMeasurementFilter(MSG_KEY, max,
+                        excludedClasses, excludedPackages, excludeClassesRegexps))
+                .add(new ThresholdFilter(max))
+                .addQueued(new ViolationSink())
+                .build();
+
+        pipeline.submit(new AstEvent(rootAST, AstEvent.Phase.BEGIN_TREE));
+        drainAndLog();
+    }
+
+    @Override
+    public void visitToken(DetailAST ast) {
+        pipeline.submit(new AstEvent(ast, AstEvent.Phase.VISIT));
+        drainAndLog();
+    }
+
+    @Override
+    public void leaveToken(DetailAST ast) {
+        pipeline.submit(new AstEvent(ast, AstEvent.Phase.LEAVE));
+        drainAndLog();
+    }
+
+    /** Drain sink, forward each violation to the framework log. */
+    private void drainAndLog() {
+        while (pipeline.hasResults()) {
+            final ViolationMessage v = pipeline.drain();
+            log(v.getLine(), v.getCol(), v.getMessageKey(), v.getArgs());
+        }
     }
 
 }
