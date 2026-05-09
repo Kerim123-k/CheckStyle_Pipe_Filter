@@ -147,16 +147,16 @@
 
 **Independent Test**: `mvn -Dtest=PipeAndFilterArchitectureTest test` green; `mvn -P jqassistant verify` shows 0 constraint hits.
 
-- [ ] T071 [P] [US2] Implement ArchUnit rule R1 (pipeline core ⊄ AbstractCheck/AbstractFileSetCheck) in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PipeAndFilterArchitectureTest.java`
-- [ ] T072 [US2] Add ArchUnit rule R2 (measurement filters ⊄ AbstractCheck) to same file
-- [ ] T073 [US2] Add ArchUnit rule R3 (no Filter calls AbstractCheck.log) to same file
-- [ ] T074 [US2] Add ArchUnit rule R4 (every concrete class in filter packages implements Filter<?,?>) to same file
-- [ ] T075a [US2] Add ArchUnit rule R5 (allow-list dependency check for `..metrics.pipeline..`) to same file
-- [ ] T075b [US2] Add ArchUnit rule R6 (allow-list dependency check for `..sizes.pipeline..`) to same file
-- [ ] T076 [US2] Add ArchUnit rule R7 (drivers depend on pipeline+api, invoke filters only via Pipeline) to same file
-- [ ] T077 [US2] Add ArchUnit rule R8 (pipeline core ⊄ depend on metrics/sizes) to same file
-- [ ] T078 [US2] Add ArchUnit rule R9 (no filter has field/ctor-param typed as another concrete Filter impl) to same file
-- [ ] T079 [US2] Add ArchUnit rule R10 (api ⊄ depend on pipeline) to same file
+- [x] T071 [P] [US2] Implement ArchUnit rule R1 (pipeline core ⊄ AbstractCheck/AbstractFileSetCheck) in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PipeAndFilterArchitectureTest.java`
+- [x] T072 [US2] Add ArchUnit rule R2 (measurement filters ⊄ AbstractCheck) to same file
+- [x] T073 [US2] Add ArchUnit rule R3 (no Filter calls AbstractCheck.log) to same file
+- [x] T074 [US2] Add ArchUnit rule R4 (every concrete class in filter packages implements Filter<?,?>) to same file
+- [x] T075a [US2] Add ArchUnit rule R5 (allow-list dependency check for `..metrics.pipeline..`) to same file
+- [x] T075b [US2] Add ArchUnit rule R6 (allow-list dependency check for `..sizes.pipeline..`) to same file
+- [x] T076 [US2] Add ArchUnit rule R7 (drivers depend on pipeline+api, invoke filters only via Pipeline) to same file
+- [x] T077 [US2] Add ArchUnit rule R8 (pipeline core ⊄ depend on metrics/sizes) to same file
+- [x] T078 [US2] Add ArchUnit rule R9 (no filter has field/ctor-param typed as another concrete Filter impl) to same file
+- [x] T079 [US2] Add ArchUnit rule R10 (api ⊄ depend on pipeline) to same file
 - [ ] T080 [P] [US2] Implement jQAssistant Q1 (filter dependencies ⊆ allow-list) in `jqassistant/rules/pipe-and-filter.xml`
 - [ ] T081 [US2] Add jQAssistant Q2 (no measurement filter extends AbstractCheck) to same file
 - [ ] T082 [US2] Add jQAssistant Q3 (adjacency graph for diagram) to same file
