@@ -10,6 +10,7 @@
 *.jpeg binary
 *.jpg binary
 *.png binary
+*.jar binary
 
 # Test resources that need specific eol
 /src/test/resources/com/puppycrawl/tools/checkstyle/checks/newlineatendoffile/InputNewlineAtEndOfFileCrlf.java eol=crlf
