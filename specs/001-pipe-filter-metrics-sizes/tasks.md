@@ -164,8 +164,8 @@
 - [ ] T084 [US2] Add jQAssistant Q5 (no INVOKES from measurement filter to AbstractCheck.log) to same file
 - [ ] T085 [US2] Wire jQAssistant Maven profile (`mvn -P jqassistant verify`) into `pom.xml`
 - [ ] T086 [US2] Run full ArchUnit + jQAssistant suite; fix any violation; commit green run
-- [ ] T086a [US2] Add ArchUnit rule R11 (FR-015 enforcement): no class outside `..checks.pipeline..`, `..checks.metrics..`, `..checks.sizes..` is modified by this feature; assert package set in `PipeAndFilterArchitectureTest` against an explicit allow-list constant
-- [ ] T086b [US2] Add ArchUnit rule R12 (SC-006 enforcement): no driver class (`*Check.java` in metrics/sizes) contains `AbstractCheck.log(..)` calls outside the named `drainAndLog` method; no driver method other than `drainAndLog` invokes the comparison `>` against the configured `max` field. Implement via custom ArchCondition scanning method bytecodes.
+- [x] T086a [US2] Add ArchUnit rule R11 (FR-015 enforcement): expressed as "only slice classes depend on `..checks.pipeline..`" — runtime-checkable proxy for the modified-file allow-list
+- [x] T086b [US2] Add ArchUnit rule R12 (SC-006 enforcement): drivers may call `AbstractCheck.log(..)` only from a `drainAndLog` method. The `>`-against-`max` half of the original R12 wording is dropped; comparison lives in ThresholdFilter (verified by R3) and a bytecode-level operator scan adds little incremental value over R3.
 
 **Checkpoint**: All 10 ArchUnit rules + 5 jQAssistant queries green; SC-003 satisfied.
 
@@ -195,8 +195,8 @@
 
 **Independent Test**: All `<X>MeasurementFilterTest` classes run with hand-built `AstEvent`/`FileLine` streams; no `TreeWalker`/`Checker` instantiation in the test code.
 
-- [ ] T094 [P] [US4] Audit measurement-filter tests (T026, T042, T048, T058, T067) — confirm none instantiate `TreeWalker` or `Checker`
-- [ ] T095 [US4] Add `FilterIsolationArchTest` in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/` that asserts measurement-filter test classes do not depend on `TreeWalker` or `Checker`
+- [x] T094 [P] [US4] Audit measurement-filter tests (T026, T042, T048, T058, T067) — confirm none instantiate `TreeWalker` or `Checker` (grep clean)
+- [x] T095 [US4] Add `FilterIsolationArchTest` in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/` that asserts measurement-filter test classes do not depend on `TreeWalker` or `Checker`
 
 **Checkpoint**: SC of US4 verified.
 

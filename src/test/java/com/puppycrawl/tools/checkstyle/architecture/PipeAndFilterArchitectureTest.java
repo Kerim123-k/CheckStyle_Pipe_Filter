@@ -187,4 +187,58 @@ public class PipeAndFilterArchitectureTest {
             .check(MAIN_CLASSES);
     }
 
+    /**
+     * R11 (FR-015): only classes in the slice depend on the pipeline core.
+     * If a class outside metrics/sizes/pipeline ever imports {@code Pipeline},
+     * a filter, or a message type, the slice has leaked.
+     */
+    @Test
+    public void r11_pipelineConsumedOnlyBySliceClasses() {
+        noClasses().that()
+                .resideOutsideOfPackages(
+                    PIPELINE_CORE,
+                    "com.puppycrawl.tools.checkstyle.checks.metrics..",
+                    "com.puppycrawl.tools.checkstyle.checks.sizes..")
+            .should().dependOnClassesThat().resideInAPackage(PIPELINE_CORE)
+            .check(MAIN_CLASSES);
+    }
+
+    /**
+     * R12 (SC-006): inside a Pipeline Driver, the only method allowed to call
+     * {@code log(..)} is {@code drainAndLog}. Catches accidental return to the
+     * pre-refactor "measure-and-log inline" shape.
+     */
+    @Test
+    public void r12_driversLogOnlyFromDrainAndLog() {
+        classes().that()
+                .resideInAnyPackage(
+                    "com.puppycrawl.tools.checkstyle.checks.metrics",
+                    "com.puppycrawl.tools.checkstyle.checks.sizes")
+                .and().haveSimpleNameEndingWith("Check")
+                .and().areNotAbstract()
+                .and().haveSimpleNameNotStartingWith("Abstract")
+            .should(new com.tngtech.archunit.lang.ArchCondition<
+                    com.tngtech.archunit.core.domain.JavaClass>(
+                    "call log(..) only from drainAndLog method") {
+                @Override
+                public void check(
+                        com.tngtech.archunit.core.domain.JavaClass driver,
+                        com.tngtech.archunit.lang.ConditionEvents events) {
+                    driver.getMethodCallsFromSelf().stream()
+                        .filter(call -> "log".equals(call.getTarget().getName()))
+                        .filter(call -> call.getTarget().getOwner().getName().startsWith(
+                            "com.puppycrawl.tools.checkstyle.api.Abstract"))
+                        .filter(call -> !"drainAndLog".equals(
+                            call.getOrigin().getName()))
+                        .forEach(call -> events.add(
+                            com.tngtech.archunit.lang.SimpleConditionEvent.violated(
+                                call,
+                                driver.getSimpleName() + "."
+                                    + call.getOrigin().getName()
+                                    + " calls log(..); only drainAndLog may.")));
+                }
+            })
+            .check(MAIN_CLASSES);
+    }
+
 }
