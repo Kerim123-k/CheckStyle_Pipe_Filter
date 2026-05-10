@@ -138,6 +138,12 @@ public final class BooleanExpressionComplexityCheck extends AbstractCheck {
 
     @Override
     public void visitToken(DetailAST ast) {
+        switch (ast.getType()) {
+            case TokenTypes.CTOR_DEF, TokenTypes.METHOD_DEF, TokenTypes.COMPACT_CTOR_DEF,
+                 TokenTypes.EXPR, TokenTypes.LAND, TokenTypes.LOR,
+                 TokenTypes.BAND, TokenTypes.BOR, TokenTypes.BXOR -> { /* accepted */ }
+            default -> throw new IllegalArgumentException("Unknown type: " + ast);
+        }
         pipeline.submit(new AstEvent(ast, AstEvent.Phase.VISIT));
         drainAndLog();
     }

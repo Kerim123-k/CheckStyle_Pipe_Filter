@@ -170,6 +170,12 @@ public final class ClassDataAbstractionCouplingCheck extends AbstractCheck {
 
     @Override
     public void visitToken(DetailAST ast) {
+        switch (ast.getType()) {
+            case TokenTypes.PACKAGE_DEF, TokenTypes.IMPORT, TokenTypes.CLASS_DEF,
+                 TokenTypes.INTERFACE_DEF, TokenTypes.ENUM_DEF, TokenTypes.LITERAL_NEW,
+                 TokenTypes.RECORD_DEF -> { /* accepted */ }
+            default -> throw new IllegalArgumentException("Unknown type: " + ast);
+        }
         pipeline.submit(new AstEvent(ast, AstEvent.Phase.VISIT));
         drainAndLog();
     }

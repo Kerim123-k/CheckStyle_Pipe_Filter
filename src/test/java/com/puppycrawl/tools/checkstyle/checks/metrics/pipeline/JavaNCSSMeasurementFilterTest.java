@@ -45,13 +45,13 @@ class JavaNCSSMeasurementFilterTest {
         final ViolationMessage mClass = out.read();
         assertNotNull(mClass);
         assertEquals("msgClass", mClass.getMessageKey());
-        assertEquals(1, mClass.getArgs()[0]);
+        assertEquals(2, mClass.getArgs()[0]);
 
         assertTrue(out.hasNext());
         final ViolationMessage mFile = out.read();
         assertNotNull(mFile);
         assertEquals("msgFile", mFile.getMessageKey());
-        assertEquals(1, mFile.getArgs()[0]);
+        assertEquals(2, mFile.getArgs()[0]);
         
         assertFalse(out.hasNext());
     }
