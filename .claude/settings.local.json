@@ -54,7 +54,14 @@
       "Bash(git show *)",
       "Bash(git add *)",
       "Bash(git rm *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(xargs -n1 basename)",
+      "Bash(chmod +x benchmarks/run-bench.sh)",
+      "Bash(chmod +x *)",
+      "Bash(./mvnw -q -Dtest='RegressionDiffTest,PerCheckFireTest,PipeAndFilterArchitectureTest,FilterIsolationArchTest' test)",
+      "Bash(java -version)",
+      "Read(//usr/lib/**)"
     ]
   }
 }

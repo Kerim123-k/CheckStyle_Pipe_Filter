@@ -132,7 +132,7 @@
 - [x] T064 [US1] Rewrite `ClassDataAbstractionCouplingCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassDataAbstractionCouplingCheck.java`
 - [~] T065 [P] [US1] `ClassFanOutComplexityMeasurementFilter` deferred — supplied by parameterizing `CouplingMeasurementFilter` (see T062).
 - [x] T066 [US1] Rewrite `ClassFanOutComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassFanOutComplexityCheck.java`
-- [ ] T067 [P] [US1] Unit tests for `ImportTrackingFilter`, `ClassDataAbstractionCouplingMeasurementFilter`, `ClassFanOutComplexityMeasurementFilter` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
+- [x] T067 [P] [US1] `CouplingMeasurementFilterTest` covers both coupling drivers since they share the parameterized filter (see T062 deferral note); ImportTrackingFilter test deferred with that filter
 - [ ] T068 [US1] Empty-diff regression after T064 and T066
 - [x] T069 [US1] Implement `RegressionDiffTest` (re-runs jar on `SampleAllViolations.java`, asserts byte-equal output to `pre-refactor-output.txt`) in `src/test/java/com/puppycrawl/tools/checkstyle/RegressionDiffTest.java`
 - [x] T070 [US1] Per-check fire test: each of 16 checks fires ≥1 violation on bundled sample input; in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PerCheckFireTest.java`
