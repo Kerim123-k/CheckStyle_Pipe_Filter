@@ -63,6 +63,8 @@ Checkstyle uses this tree so that checks do not have to read the raw text. A che
 
 ## 1.3  Checkstyle's Original Architecture
 
+*[image placeholder: originalCheckstyleStructure.png — IDE Project view of legacy checkstyle/checks/ tree (metrics + sizes packages before refactor)]*
+
 Checkstyle's original design is a Plug-in Framework. A central engine called `TreeWalker` parses each file and walks the tree. As it walks, it calls `visitToken()` and `leaveToken()` on every check that registered for the current token type. Each check class extends the base class `AbstractCheck`. When a check finds a violation, it calls the `log()` method that it inherited from `AbstractCheck`.
 
 This is simple, and it works, but every check ends up doing too many jobs at once. A typical check class contains:
@@ -75,6 +77,8 @@ This is simple, and it works, but every check ends up doing too many jobs at onc
 All four jobs sit in one class. There is no clear stage boundary, no place where you can replace or test the measurement on its own, and no protection against shared state leaking between concerns.
 
 ## 1.4  The Two Check Categories We Worked With
+
+*[image placeholder: metricsAndSizesPackages.png — Side-by-side view of original metrics/ and sizes/ packages with all 16 driver files]*
 
 Our refactoring scope was set by the assignment: all checks under the Metrics and Size Violations categories.
 
@@ -131,6 +135,8 @@ The three building blocks of a Pipe-and-Filter system are:
 A pipeline is the chain. A pipeline composer (sometimes called "the orchestrator", but in our codebase it is just a `Pipeline` object built once and used many times) wires the filters together at startup and then steps through them at runtime.
 
 ## 2.3  How This Maps to Checkstyle
+
+*[image placeholder: pipelineMappingDiagram.png — Whiteboard / Excalidraw sketch mapping AST -> Pipe -> Filter -> Violation flow]*
 
 The Metrics and Sizes checks fit Pipe-and-Filter naturally because each one of them does the same five things in the same order:
 
@@ -212,6 +218,8 @@ We migrated the checks one at a time. We did not start until we had captured the
 
 ## 3.1  Metrics Checks (6 checks measure code complexity)
 
+*[image placeholder: metricsDriversIdeView.png — IDE view listing the 6 metrics driver classes after refactor]*
+
 | Check Name | What It Detects | Default Threshold |
 |--|--|--|
 | BooleanExpressionComplexity | Count of `&&`, `\|\|`, `&`, `\|`, `^` in a single boolean expression. Too many operators in one condition makes the condition unreadable. | Max 3 |
@@ -224,6 +232,8 @@ We migrated the checks one at a time. We did not start until we had captured the
 The slice also contains a shared abstract base class, `AbstractClassCouplingCheck`. It is reused by the two coupling-related checks. We kept this class in the post-refactor codebase as a private helper (renamed conceptually to live next to the new measurement filter), because the assignment forbids "rewriting check logic" and the type-resolution helpers count as logic.
 
 ## 3.2  Sizes Checks (10 checks enforce length limits)
+
+*[image placeholder: sizesDriversIdeView.png — IDE view listing the 10 sizes driver classes after refactor]*
 
 | Check Name | What It Enforces | Default Limit |
 |--|--|--|
@@ -250,6 +260,8 @@ To migrate the slice we added a small infrastructure layer in a new package, `co
 
 ## 4.1  `Pipe<T>` (carrier interface)
 
+*[image placeholder: pipeInterfaceCode.png — IDE screenshot of Pipe<T> interface source]*
+
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.pipe`
 
 ```java
@@ -270,6 +282,8 @@ Two concrete implementations:
 
 ## 4.2  `Filter<I, O>` (filter contract)
 
+*[image placeholder: filterInterfaceCode.png — IDE screenshot of Filter<I,O> interface source]*
+
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline`
 
 ```java
@@ -281,6 +295,8 @@ public interface Filter<I, O> {
 Every filter implements this interface. The contract is small on purpose. A filter reads zero or more messages from `in`, transforms them, writes zero or more messages to `out`, and stops. A filter may keep its own private state during a `process` call (an internal stack, a counter, a regex matcher), but that state never escapes the filter through any reference.
 
 ## 4.3  `Pipeline<HEAD, TAIL>` and `PipelineBuilder`
+
+*[image placeholder: pipelineBuilderCode.png — IDE screenshot of PipelineBuilder fluent API in use]*
 
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline`
 
@@ -301,6 +317,8 @@ All four are `final` classes with `final` fields; all properties are set once in
 
 ## 4.5  Common filters
 
+*[image placeholder: commonFiltersFolder.png — IDE Project view of pipeline/common/ filters package]*
+
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.filter`
 
 | Filter | I → O | Responsibility |
@@ -313,6 +331,8 @@ Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.filter`
 
 ## 4.6  Pipeline Driver
 
+*[image placeholder: pipelineDriverExampleCode.png — IDE screenshot of MethodLengthCheck driver wiring its pipeline]*
+
 Each of the 16 outer `*Check.java` files keeps its original fully-qualified class name and continues to extend `AbstractCheck` or `AbstractFileSetCheck`. The class becomes a thin Pipeline Driver:
 
 - one field, the `Pipeline<...>`;
@@ -323,6 +343,8 @@ Each of the 16 outer `*Check.java` files keeps its original fully-qualified clas
 The driver does **no measurement and no threshold comparison**. Those concerns live in the dedicated filter classes.
 
 ## 4.7  Per-check measurement filter classes
+
+*[image placeholder: measurementFiltersFolder.png — IDE Project view of pipeline/measurement/ package showing all 16 filter classes]*
 
 The actual measurement code for each check is in a class of its own, in `checks.metrics.pipeline` (for the metrics checks) or `checks.sizes.pipeline` (for the size checks). The complete list is in Section 6.
 
@@ -345,6 +367,10 @@ For each of the 16 checks we did the same five steps in the same order:
 We did the simplest checks first (`MethodLength`, `AnonInnerLength`, `OuterTypeNumber`, `ParameterNumber`, `RecordComponentNumber`) and the coupling checks last. The full order is in `plan.md`, Section 6.
 
 ## 5.2  Before vs After: The Call Flow
+
+*[image placeholder: methodLengthBeforeCode.png — Old MethodLengthCheck.java side-by-side: stateful counter inside visitToken]*
+
+*[image placeholder: methodLengthAfterCode.png — New MethodLengthCheck driver + MethodLengthFilter delegating to pipeline]*
 
 A short PlantUML sequence for `MethodLengthCheck`. The PlantUML source is in Appendix 1 and Appendix 2.
 
@@ -375,6 +401,8 @@ For `LineLengthCheck` the chain is `LineSplitterFilter -> IgnorePatternFilter ->
 For the coupling checks the chain is `TokenFilter -> ImportTrackingFilter -> CouplingMeasurementFilter -> ThresholdFilter -> ViolationSink`.
 
 ## 5.3  The New File Structure
+
+*[image placeholder: pipelineFolderTreeIdeView.png — IDE Project tree of new pipeline/ subpackages (api, builder, common, measurement)]*
 
 After the refactoring, the new packages look like this. Existing packages keep their original names; the new sub-packages are below them.
 
@@ -467,6 +495,8 @@ This table shows, for every original check, where the measurement code went and 
 
 ## 6.1  Net Change in Source Files
 
+*[image placeholder: gitDiffStatSummary.png — Terminal screenshot of `git diff --stat` summary across the slice]*
+
 | Category | Files added | Files removed | Net |
 |--|--|--|--|
 | Pipeline infrastructure (`checks/pipeline/...`) | 12 | 0 | +12 |
@@ -517,6 +547,8 @@ The refactoring is only useful if the tool still does what it did before. We ver
 
 ## 7.1  Regression Test — Byte-Identical Output
 
+*[image placeholder: regressionDiffEmpty.png — Terminal screenshot showing diff between baseline + refactored Checkstyle reports = empty]*
+
 The first check is the strongest: run both jars on the same input and `diff` the output. If the output is byte-identical, the refactoring did not change anything visible to a user.
 
 ```
@@ -543,6 +575,8 @@ Result: 44 violations on both runs, every line identical. `diff` produced no out
 
 ## 7.2  Full Test Suite
 
+*[image placeholder: mvnTestSummary.png — Terminal screenshot of `mvn test` final summary panel (totals, failures, errors)]*
+
 `mvn -Djacoco.skip=true test` runs Checkstyle's entire 5,984-test set. We ran it on 2026-05-10 against OpenJDK 25 on Linux, and every test that has anything to do with the refactor is green: `RegressionDiffTest` (1/1), `PipeAndFilterArchitectureTest` (12/12 — R1 through R12), `FilterIsolationArchTest` (2/2), `PerCheckFireTest` (16/16), `AllChecksTest` (12/12), `CheckerTest` (52/52), `PackageObjectFactoryTest` (27/27), and the original per-driver functional test for every one of the sixteen migrated checks.
 
 The aggregate run does report 14 failures and 107 errors. None of them are caused by the refactor — they fall cleanly into three buckets that are about the host environment, not the slice. The largest bucket (~95 errors) is Mockito/ByteBuddy on JDK 25: ByteBuddy in the project's pinned Mockito version officially supports up to Java 22, so its inline-mock and final-class instrumentation simply fails on a JDK 25 host. That single root cause accounts for `MainTest` (84 of those errors), `HeaderCheckTest`, `ImportControlLoaderTest`, `PropertyCacheFileTest`, `CommonUtilTest`, `MetadataGeneratorUtilTest`, `XdocsPagesTest`, `TreeWalkerTest`, `ConfigurationLoaderTest`, and several `Suppress*FilterTest` classes — none of which the refactor touches. About ten more failures come from EqualsVerifier (which itself embeds ByteBuddy and breaks the same way) and another six from GUI tests that need a display we do not have.
@@ -554,6 +588,8 @@ Two `ImmutabilityTest` failures and a `testDefaultHooks` NPE *were* legitimate s
 The drivers preserve every public surface of their original class — class name, configuration property names, message keys, default tokens, annotations, Javadoc — so existing tests cannot tell that anything was rewritten unless they deliberately use reflection to look at private state.
 
 ## 7.3  Per-Check Verification — Every Check Still Fires
+
+*[image placeholder: perCheckFireGreenJunit.png — JUnit runner pane showing all 16 PerCheckFire tests green]*
 
 A small sanity check: each of the 16 checks must still report at least one violation on the sample input. A check that reports zero violations might be silently broken (the driver might have lost the connection to the pipeline).
 
@@ -578,6 +614,8 @@ A small sanity check: each of the 16 checks must still report at least one viola
 
 ## 7.4  ArchUnit Conformance Tests (10/10 Rules Pass)
 
+*[image placeholder: archUnitConformanceGreen.png — JUnit runner pane showing 12/12 ArchUnit + 2/2 FilterIsolation tests green]*
+
 ArchUnit lets us write architectural rules as JUnit tests. These rules read the compiled bytecode, so they prove the architectural shape is really there, not just that the diagrams look nice.
 
 | Rule | What it checks | Result |
@@ -596,6 +634,16 @@ ArchUnit lets us write architectural rules as JUnit tests. These rules read the 
 The ArchUnit test class is `src/test/java/.../architecture/PipeAndFilterArchitectureTest.java` and the rule definitions are listed in Appendix 10.
 
 ## 7.5  jQAssistant Graph Queries (Proving the Architecture in the Dependency Graph)
+
+*[image placeholder: jqassistantQuery1Result.png — jQAssistant Q1 result: filters and their dependencies]*
+
+*[image placeholder: jqassistantQuery2Result.png — jQAssistant Q2 result: measurement filters extending base classes]*
+
+*[image placeholder: jqassistantQuery3Result.png — jQAssistant Q3 result: adjacency / data-flow graph]*
+
+*[image placeholder: jqassistantQuery4Result.png — jQAssistant Q4 result: cycles in filter graph (expect zero)]*
+
+*[image placeholder: jqassistantQuery5Result.png — jQAssistant Q5 result: direct AbstractCheck.log invocations (expect zero)]*
 
 jQAssistant scans the bytecode and stores a Neo4j graph of classes and dependencies. We can then write Cypher queries to confirm what the ArchUnit tests assert from a different angle.
 
@@ -726,6 +774,8 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 
 ## 10.2  Experimental Setup
 
+*[image placeholder: benchSetupTerminal.png — Terminal screenshot of run-bench.sh kicking off baseline + refactored runs]*
+
 | Parameter | Value | Why |
 |--|--|--|
 | Machine | Same host as Task 1 Part B (Windows 11, 16 GB RAM, SSD) | Direct comparability with Task 1 numbers |
@@ -737,6 +787,8 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 
 ## 10.3  The Five Benchmark Projects
 
+*[image placeholder: benchProjectsCloned.png — Terminal listing of /tmp/checkstyle-bench-repos with the 5 cloned projects]*
+
 | Project | Description | Source folder | Approx. size |
 |--|--|--|--|
 | minimal-json | Tiny JSON library, zero dependencies | `src/main/java` | ~25 .java files |
@@ -746,6 +798,8 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 | Apache Calcite (core) | Large SQL/query framework | `core/src/main/java` | ~2000+ .java files |
 
 ## 10.4  Results
+
+*[image placeholder: benchRunOutputTerminal.png — Terminal screenshot of bench run completing with per-project timings]*
 
 Wall-clock times in seconds (mean of 1 warm-up + 3 timed runs). "Baseline" is the pre-refactor jar (`baseline/checkstyle-original.jar`); "Refactored" is the Pipe-and-Filter jar built from this branch. Run on Linux 6.18.1-arch1-2 / OpenJDK 25.0.2 on 2026-05-10.
 
