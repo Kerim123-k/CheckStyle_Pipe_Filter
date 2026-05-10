@@ -22,7 +22,7 @@ package com.puppycrawl.tools.checkstyle.checks.sizes;
 import java.util.Collections;
 import java.util.Set;
 
-import com.puppycrawl.tools.checkstyle.StatelessCheck;
+import com.puppycrawl.tools.checkstyle.FileStatefulCheck;
 import com.puppycrawl.tools.checkstyle.api.AbstractCheck;
 import com.puppycrawl.tools.checkstyle.api.DetailAST;
 import com.puppycrawl.tools.checkstyle.api.TokenTypes;
@@ -43,7 +43,7 @@ import com.puppycrawl.tools.checkstyle.utils.CommonUtil;
  *
  * @since 3.0
  */
-@StatelessCheck
+@FileStatefulCheck
 public class ParameterNumberCheck extends AbstractCheck {
 
     public static final String MSG_KEY = "maxParam";

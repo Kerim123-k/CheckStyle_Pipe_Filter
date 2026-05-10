@@ -133,6 +133,10 @@ public final class NPathComplexityCheck extends AbstractCheck {
 
     @Override
     public void beginTree(DetailAST rootAST) {
+        buildPipeline();
+    }
+
+    private void buildPipeline() {
         pipeline = PipelineBuilder.<AstEvent>start()
                 .add(new TokenFilter(getRequiredTokens()))
                 .add(new NPathMeasurementFilter(max, MSG_KEY))
@@ -143,12 +147,18 @@ public final class NPathComplexityCheck extends AbstractCheck {
 
     @Override
     public void visitToken(DetailAST ast) {
+        if (pipeline == null) {
+            buildPipeline();
+        }
         pipeline.submit(new AstEvent(ast, AstEvent.Phase.VISIT));
         drainAndLog();
     }
 
     @Override
     public void leaveToken(DetailAST ast) {
+        if (pipeline == null) {
+            buildPipeline();
+        }
         pipeline.submit(new AstEvent(ast, AstEvent.Phase.LEAVE));
         drainAndLog();
     }
