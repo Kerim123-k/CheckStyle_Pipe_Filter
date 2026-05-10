@@ -99,7 +99,7 @@
 - [x] T040 [P] [US1] Implement `ExecutableStatementCountMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/ExecutableStatementCountMeasurementFilter.java`
 - [x] T041 [US1] Rewrite `ExecutableStatementCountCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/ExecutableStatementCountCheck.java`
 - [x] T042 [P] [US1] Per-filter unit tests for T028/T030/T032/T034/T036/T038/T040 (one test class per filter under `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`)
-- [ ] T043 [US1] Empty-diff regression check after each driver in T029/T031/T033/T035/T037/T039/T041
+- [x] T043 [US1] Empty-diff regression check after each driver in T029/T031/T033/T035/T037/T039/T041 — verified via `RegressionDiffTest` (byte-equal vs `pre-refactor-output.txt`)
 
 ### File-level checks
 
@@ -108,7 +108,7 @@
 - [x] T046 [P] [US1] Implement `LineLengthMeasurementFilter` (tab-width via constructor) in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/LineLengthMeasurementFilter.java`
 - [x] T047 [US1] Rewrite `LineLengthCheck.java` as file-level driver with `IgnorePatternFilter` between splitter and measurement; pass `tabWidth` into measurement filter constructor; in `src/main/java/com/puppycrawl/tools/checkstyle/checks/sizes/LineLengthCheck.java`
 - [x] T048 [P] [US1] Unit tests `FileLengthMeasurementFilterTest`, `LineLengthMeasurementFilterTest` in `src/test/java/com/puppycrawl/tools/checkstyle/checks/sizes/pipeline/`
-- [ ] T049 [US1] Empty-diff regression after T045 and T047
+- [x] T049 [US1] Empty-diff regression after T045 and T047 — covered by `RegressionDiffTest`
 
 ### Complexity checks
 
@@ -121,7 +121,7 @@
 - [x] T056 [P] [US1] Implement `JavaNcssMeasurementFilter` in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/JavaNcssMeasurementFilter.java`
 - [x] T057 [US1] Rewrite `JavaNCSSCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/JavaNCSSCheck.java`
 - [x] T058 [P] [US1] Per-filter unit tests for T050/T052/T054/T056 in `src/test/java/com/puppycrawl/tools/checkstyle/checks/metrics/pipeline/`
-- [ ] T059 [US1] Empty-diff regression after T051/T053/T055/T057
+- [x] T059 [US1] Empty-diff regression after T051/T053/T055/T057 — covered by `RegressionDiffTest`
 
 ### Coupling checks (last — most stateful)
 
@@ -133,7 +133,7 @@
 - [~] T065 [P] [US1] `ClassFanOutComplexityMeasurementFilter` deferred — supplied by parameterizing `CouplingMeasurementFilter` (see T062).
 - [x] T066 [US1] Rewrite `ClassFanOutComplexityCheck.java` as driver in `src/main/java/com/puppycrawl/tools/checkstyle/checks/metrics/ClassFanOutComplexityCheck.java`
 - [x] T067 [P] [US1] `CouplingMeasurementFilterTest` covers both coupling drivers since they share the parameterized filter (see T062 deferral note); ImportTrackingFilter test deferred with that filter
-- [ ] T068 [US1] Empty-diff regression after T064 and T066
+- [x] T068 [US1] Empty-diff regression after T064 and T066 — covered by `RegressionDiffTest`
 - [x] T069 [US1] Implement `RegressionDiffTest` (re-runs jar on `SampleAllViolations.java`, asserts byte-equal output to `pre-refactor-output.txt`) in `src/test/java/com/puppycrawl/tools/checkstyle/RegressionDiffTest.java`
 - [x] T070 [US1] Per-check fire test: each of 16 checks fires ≥1 violation on bundled sample input; in `src/test/java/com/puppycrawl/tools/checkstyle/architecture/PerCheckFireTest.java`
 
@@ -163,7 +163,7 @@
 - [x] T083 [US2] Add jQAssistant Q4 (acyclic filter graph) to same file
 - [x] T084 [US2] Add jQAssistant Q5 (no INVOKES from measurement filter to AbstractCheck.log) to same file
 - [~] T085 [US2] Wire jQAssistant Maven profile (`mvn -P jqassistant verify`) into `pom.xml` — deferred. FR-015 forbids unrelated pom edits; user must add the `jqassistant-maven-plugin` profile manually when running constraint queries.
-- [ ] T086 [US2] Run full ArchUnit + jQAssistant suite; fix any violation; commit green run
+- [x] T086 [US2] Run full ArchUnit + jQAssistant suite; fix any violation; commit green run — ArchUnit 12/12 + FilterIsolation 2/2 green (2026-05-10); jQAssistant deferred with T085
 - [x] T086a [US2] Add ArchUnit rule R11 (FR-015 enforcement): expressed as "only slice classes depend on `..checks.pipeline..`" — runtime-checkable proxy for the modified-file allow-list
 - [x] T086b [US2] Add ArchUnit rule R12 (SC-006 enforcement): drivers may call `AbstractCheck.log(..)` only from a `drainAndLog` method. The `>`-against-`max` half of the original R12 wording is dropped; comparison lives in ThresholdFilter (verified by R3) and a bytecode-level operator scan adds little incremental value over R3.
 
