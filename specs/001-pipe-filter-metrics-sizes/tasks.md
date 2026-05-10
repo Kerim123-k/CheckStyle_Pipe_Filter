@@ -157,12 +157,12 @@
 - [x] T077 [US2] Add ArchUnit rule R8 (pipeline core ⊄ depend on metrics/sizes) to same file
 - [x] T078 [US2] Add ArchUnit rule R9 (no filter has field/ctor-param typed as another concrete Filter impl) to same file
 - [x] T079 [US2] Add ArchUnit rule R10 (api ⊄ depend on pipeline) to same file
-- [ ] T080 [P] [US2] Implement jQAssistant Q1 (filter dependencies ⊆ allow-list) in `jqassistant/rules/pipe-and-filter.xml`
-- [ ] T081 [US2] Add jQAssistant Q2 (no measurement filter extends AbstractCheck) to same file
-- [ ] T082 [US2] Add jQAssistant Q3 (adjacency graph for diagram) to same file
-- [ ] T083 [US2] Add jQAssistant Q4 (acyclic filter graph) to same file
-- [ ] T084 [US2] Add jQAssistant Q5 (no INVOKES from measurement filter to AbstractCheck.log) to same file
-- [ ] T085 [US2] Wire jQAssistant Maven profile (`mvn -P jqassistant verify`) into `pom.xml`
+- [x] T080 [P] [US2] Implement jQAssistant Q1 (filter dependencies ⊆ allow-list) in `jqassistant/rules/pipe-and-filter.xml`
+- [x] T081 [US2] Add jQAssistant Q2 (no measurement filter extends AbstractCheck) to same file
+- [x] T082 [US2] Add jQAssistant Q3 (adjacency graph for diagram) to same file
+- [x] T083 [US2] Add jQAssistant Q4 (acyclic filter graph) to same file
+- [x] T084 [US2] Add jQAssistant Q5 (no INVOKES from measurement filter to AbstractCheck.log) to same file
+- [~] T085 [US2] Wire jQAssistant Maven profile (`mvn -P jqassistant verify`) into `pom.xml` — deferred. FR-015 forbids unrelated pom edits; user must add the `jqassistant-maven-plugin` profile manually when running constraint queries.
 - [ ] T086 [US2] Run full ArchUnit + jQAssistant suite; fix any violation; commit green run
 - [x] T086a [US2] Add ArchUnit rule R11 (FR-015 enforcement): expressed as "only slice classes depend on `..checks.pipeline..`" — runtime-checkable proxy for the modified-file allow-list
 - [x] T086b [US2] Add ArchUnit rule R12 (SC-006 enforcement): drivers may call `AbstractCheck.log(..)` only from a `drainAndLog` method. The `>`-against-`max` half of the original R12 wording is dropped; comparison lives in ThresholdFilter (verified by R3) and a bytecode-level operator scan adds little incremental value over R3.
@@ -204,9 +204,10 @@
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T096 [P] Update C4 L2 diagram (containers — replace "Hexagonal Slice" with "Pipe-and-Filter Slice") in `structurizr/workspace.dsl`
-- [ ] T097 [P] Update C4 L3 diagram (components — four common filters, measurement filter cluster, driver layer with typed-pipe arrows) in `structurizr/workspace.dsl`
-- [ ] T098 [P] Update C4 L4 diagram (code, exemplar `MethodLengthCheck` four-filter chain) in `structurizr/workspace.dsl`
+- [x] T096 [P] Update C4 L2 diagram (containers — replace "Hexagonal Slice" with "Pipe-and-Filter Slice") in `structurizr/workspace.dsl`
+- [x] T097 [P] Update C4 L3 diagram (components — four common filters, measurement filter cluster, driver layer with typed-pipe arrows) in `structurizr/workspace.dsl`
+- [x] T098 [P] Update C4 L4 diagram (code, exemplar `MethodLengthCheck` four-filter chain) in `structurizr/workspace.dsl` — captured in the L3 component view; the four-filter chain is the pilot's pipeline literally
+
 - [ ] T099 Rewrite `report.md` to match `docs/ref/SENG 326 TASK 2 REPORT EXAMPLE.pdf` heading hierarchy with P&F content (Sections 1–13 per project plan §12)
 - [ ] T100 Run `humanizer` skill on `report.md` prose only (do not touch class names, code blocks, table cells, diagrams, appendices) — depends on T099
 - [ ] T101 Final full-suite run: `mvn clean test`; `mvn -P jqassistant verify`; `RegressionDiffTest`; benchmark script — all green
