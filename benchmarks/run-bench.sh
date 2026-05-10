@@ -38,9 +38,11 @@ clone_if_missing() {
 
 time_run() {
     local jar="$1" target="$2"
-    /usr/bin/time -f "%e" -o /tmp/bench-time \
-        java -jar "$jar" -c "$CONFIG" "$target" >/dev/null 2>&1 || true
-    cat /tmp/bench-time
+    local start end
+    start=$(date +%s.%N)
+    java -jar "$jar" -c "$CONFIG" "$target" >/dev/null 2>&1 || true
+    end=$(date +%s.%N)
+    awk "BEGIN{printf \"%.3f\", $end - $start}"
 }
 
 bench_pair() {

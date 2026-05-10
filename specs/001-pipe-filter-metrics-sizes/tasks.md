@@ -180,8 +180,8 @@
 - [x] T087 [P] [US3] Add benchmark script `benchmarks/run-bench.sh` (1 warm-up + 3 timed runs, mean + 95% CI per project) — bash version chosen over PowerShell since the dev env is Linux
 - [x] T088 [P] [US3] Pin benchmark targets `benchmarks/projects.txt`: minimal-json, javapoet, gs-core, jgrapht-core, Apache Calcite (core)
 - [x] T089 [P] [US3] Pin benchmark Checkstyle config `benchmarks/bench-config.xml` enabling all 16 metrics+sizes checks at default thresholds
-- [ ] T090 [US3] Run baseline jar (`baseline/checkstyle-original.jar`) over all 5 targets; record times in `benchmarks/results-baseline.csv` — **manual**: `benchmarks/run-bench.sh baseline`
-- [ ] T091 [US3] Run refactored jar over all 5 targets; record times in `benchmarks/results-refactored.csv` — **manual**: `benchmarks/run-bench.sh refactored`
+- [x] T090 [US3] Run baseline jar (`baseline/checkstyle-original.jar`) over all 5 targets; record times in `benchmarks/results-baseline.csv` — executed 2026-05-10
+- [x] T091 [US3] Run refactored jar over all 5 targets; record times in `benchmarks/results-refactored.csv` — executed 2026-05-10
 - [x] T092 [US3] `benchmarks/compare.py` produces `benchmarks/summary.md` (markdown table, mean + 95% CI per project, % delta). PNG plot deferred — table is sufficient for the report.
 - [x] T093 [US3] `compare.py` exits non-zero when any project exceeds ±10% — wired into the harness
 
@@ -210,8 +210,8 @@
 
 - [x] T099 `report.md` already structured to the example heading hierarchy; 13+ sections cover background, P&F theory, the 16 checks, infrastructure, mapping, verification, constraints, performance, lessons learned. No rewrite needed.
 - [~] T100 `humanizer` skill on `report.md` prose deferred — skill not available in this environment. Run manually if desired.
-- [ ] T101 Final full-suite run: `./mvnw clean test`; benchmark script — **manual** (long-running)
-- [ ] T102 Validate against `quickstart.md` definition-of-done checklist for every migrated check — **manual** review
+- [~] T101 Final full-suite run: `./mvnw clean test`; benchmark script — bench done 2026-05-10 (results-baseline/refactored.csv + summary.md). Full `./mvnw clean test` deferred — host JDK is 25, project targets release 21; targeted suites (RegressionDiff, ArchUnit, PerCheckFire, FilterIsolation) all green.
+- [~] T102 Validate against `quickstart.md` definition-of-done checklist for every migrated check — manual review pending
 
 ---
 
