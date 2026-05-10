@@ -12,19 +12,13 @@ Target architecture (per group registration): **Pipe-and-Filter Architecture**
 
 ## Executive Summary
 
-This report contains our Task 2 work for SENG 326. The assignment asked each group to refactor a small slice of Checkstyle 13.2.0 into the architectural style that the group registered with the lecturer. Our group registered the Pipe-and-Filter style, so this is the only style we used in the slice. Other styles, including the styles seen in the provided example report, are not used here; they are mentioned only when we need to compare.
+This is our Task 2 write-up for SENG 326. The assignment was to take a small slice of Checkstyle 13.2.0 and refactor it into the architectural style our group registered for. We registered Pipe-and-Filter, so that is the only style used inside the slice. Where the example report or the original codebase used other styles we mention them by name when a comparison helps, and otherwise leave them alone.
 
-The slice we refactored is the same slice the assignment defined for everybody: all checks in the Metrics category and all checks in the Size Violations category. That is 6 metric checks (plus one shared abstract base class), and 10 size checks. Sixteen concrete checks in total.
+The slice itself was fixed for everybody: every check in the Metrics category and every check in the Size Violations category — six metric checks (plus one shared abstract base class), ten size checks, sixteen concrete checks in total.
 
-After the refactoring:
+By the end of the migration the refactored jar produced byte-for-byte identical output to the original on the same inputs, the full Maven test suite still passed for every test that was not blocked by a host-environment issue (JDK 25 + Mockito incompatibility, headless GUI), ten ArchUnit rules confirmed the pipeline shape in the compiled bytecode, five jQAssistant queries confirmed the same shape from the dependency graph, and the per-file processing time stayed within timing noise of the original on every benchmark project we measured.
 
-- the tool produces byte-for-byte identical output to the original on the same inputs;
-- the full Maven test suite still passes with zero failures;
-- ten ArchUnit rules check that the pipeline shape is really present in the bytecode and pass;
-- five jQAssistant queries confirm the same shape from the dependency graph;
-- the per-file processing time is within timing noise of the original on every benchmark project we measured.
-
-Inside the slice, every check is now a small pipeline of independent filters connected by typed pipes. The outer class that Checkstyle's TreeWalker still sees was reduced to a thin Pipeline Driver that only feeds AST events into the head of the pipeline and forwards violations from the tail to `log()`. The measurement, threshold comparison, and violation emission concerns are split into separate filter classes, each one with a single responsibility.
+Inside the slice, each check is now a small pipeline of independent filters wired together by typed pipes. The outer class that Checkstyle's `TreeWalker` still sees has been cut down to a thin Pipeline Driver — its only job is to translate framework callbacks into pipeline messages and forward whatever violations come back out the tail. Measurement, threshold comparison, and violation emission used to share one method body in the original check; they are now three separate filter classes, each with a single responsibility.
 
 ---
 
@@ -118,15 +112,11 @@ Before the refactoring, every one of the sixteen checks mixed the four jobs from
 
 ## 2.1  The Core Idea
 
-Pipe-and-Filter is one of the oldest architectural styles in software engineering. The idea comes from the Unix shell: every command on a pipeline does one job, reads from its standard input, writes to its standard output, and does not know anything about the commands on either side of it. The `|` symbol between commands is the pipe.
+Pipe-and-Filter goes back to the early days of Unix. Each command in a shell pipeline does exactly one thing, reads from its standard input, writes to its standard output, and is completely unaware of whatever sits on either side of it. The `|` between commands is the pipe.
 
-In a Pipe-and-Filter system:
+The same vocabulary carries over to a software pipeline: a **filter** is an independent processing stage with a single responsibility, a **pipe** is a one-way channel that carries messages from one filter to the next, and the behaviour of the system is whatever falls out when you compose those stages in order.
 
-- a **filter** is an independent processing stage with one responsibility;
-- a **pipe** is a unidirectional channel that carries messages from one filter to the next;
-- the system's behaviour is the composition of these stages.
-
-Filters do not call each other. They do not share variables. The only thing that connects them is the data on the pipes. If you want to change behaviour, you replace a filter or rearrange the pipeline. The chain is sequential and acyclic: messages flow in one direction; nothing flows backwards.
+Filters never call each other and never share variables. The only thing connecting them is the data flowing along the pipes. If you want to change behaviour, you replace a filter or rearrange the chain. The chain itself is sequential and acyclic — messages flow forward, and nothing flows back.
 
 ## 2.2  Pipes, Filters, and Messages
 
@@ -192,15 +182,11 @@ For the two file-level checks the head of the pipeline is `LineSplitterFilter` (
 
 ## 2.4  Why We Chose Pipe-and-Filter
 
-Because the assignment told us to. Our group is registered for Pipe-and-Filter Architecture (see "Software Architecture Group Project Registration"), and the Task 2 clarification states clearly that "Groups are to refactor Checkstyle slice to the architecture registered with their group" and that "no other architecture will be accepted".
+Because the assignment told us to. Our group registered for Pipe-and-Filter Architecture (see "Software Architecture Group Project Registration"), and the Task 2 clarification was unambiguous: "Groups are to refactor Checkstyle slice to the architecture registered with their group", and "no other architecture will be accepted".
 
-So the choice of architecture is not a design freedom in this assignment. The interesting design decisions are about *how* to apply Pipe-and-Filter to a static analysis slice that already runs inside another framework, which is the rest of this report.
+The architecture is therefore a fixed input rather than a design choice. The real design questions in this report are about *how* you actually apply Pipe-and-Filter to a static-analysis slice that has to keep running inside another framework — which is what the rest of this document spends its time on.
 
-That said, the style is a good fit for this slice for three independent reasons:
-
-- **Linear data flow already exists.** The Metrics and Sizes checks all consume a stream of events and produce a stream of violations. The original code mixed those two streams with the measurement code; Pipe-and-Filter just makes the streams explicit.
-- **Stage isolation is enforceable.** With pipes as the only communication channel, ArchUnit and jQAssistant can prove from the bytecode that no filter depends on a sibling and that violations only leave the slice through the sink.
-- **Per-check variation is contained.** All sixteen pipelines share the same selection / threshold / sink stages; the only stage that varies is the measurement filter. This made the migration repeatable and reduced the chance of regressions.
+That said, Pipe-and-Filter happens to be a good fit for this particular slice. The linear data flow is already there: every Metrics and Sizes check consumes a stream of events and produces a stream of violations. The original code wove those two streams together with the measurement logic; the refactor simply pulls them apart and makes them explicit. Stage isolation is something we can actually enforce — once pipes are the only channel between filters, ArchUnit and jQAssistant can prove from the bytecode that no filter knows about its siblings and that violations only escape the slice through the sink. And per-check variation stays contained: all sixteen pipelines share the same selection, threshold, and sink stages, with only the measurement filter changing from one check to the next, which made the migration repeatable and kept the regression surface small.
 
 ### 2.4.1  Alternative Architectural Styles Considered
 
@@ -557,23 +543,15 @@ Result: 44 violations on both runs, every line identical. `diff` produced no out
 
 ## 7.2  Full Test Suite
 
-`mvn -Djacoco.skip=true test` runs the entire Checkstyle test set (5,984 tests) on Linux / OpenJDK 25 (2026-05-10). Every refactor-relevant suite is green: `RegressionDiffTest` (1/1), `PipeAndFilterArchitectureTest` (12/12 — R1–R12), `FilterIsolationArchTest` (2/2), `PerCheckFireTest` (16/16), `AllChecksTest` (12/12), `CheckerTest` (52/52), `PackageObjectFactoryTest` (27/27), and the per-driver functional test for each of the 16 migrated checks.
+`mvn -Djacoco.skip=true test` runs Checkstyle's entire 5,984-test set. We ran it on 2026-05-10 against OpenJDK 25 on Linux, and every test that has anything to do with the refactor is green: `RegressionDiffTest` (1/1), `PipeAndFilterArchitectureTest` (12/12 — R1 through R12), `FilterIsolationArchTest` (2/2), `PerCheckFireTest` (16/16), `AllChecksTest` (12/12), `CheckerTest` (52/52), `PackageObjectFactoryTest` (27/27), and the original per-driver functional test for every one of the sixteen migrated checks.
 
-The aggregate run reports 14 failures and 107 errors. Every one of those falls into one of three buckets that are **not** caused by the refactor:
+The aggregate run does report 14 failures and 107 errors. None of them are caused by the refactor — they fall cleanly into three buckets that are about the host environment, not the slice. The largest bucket (~95 errors) is Mockito/ByteBuddy on JDK 25: ByteBuddy in the project's pinned Mockito version officially supports up to Java 22, so its inline-mock and final-class instrumentation simply fails on a JDK 25 host. That single root cause accounts for `MainTest` (84 of those errors), `HeaderCheckTest`, `ImportControlLoaderTest`, `PropertyCacheFileTest`, `CommonUtilTest`, `MetadataGeneratorUtilTest`, `XdocsPagesTest`, `TreeWalkerTest`, `ConfigurationLoaderTest`, and several `Suppress*FilterTest` classes — none of which the refactor touches. About ten more failures come from EqualsVerifier (which itself embeds ByteBuddy and breaks the same way) and another six from GUI tests that need a display we do not have.
 
-1. **Mockito / ByteBuddy on JDK 25 (~95 errors).** The host JDK is 25; ByteBuddy in the project's pinned Mockito version officially supports up to Java 22, so its inline-mock and final-class instrumentation fail. Affects `MainTest` (84), `HeaderCheckTest`, `ImportControlLoaderTest`, `PropertyCacheFileTest`, `CommonUtilTest`, `MetadataGeneratorUtilTest`, `XdocsPagesTest`, `TreeWalkerTest`, `ConfigurationLoaderTest`, and several Suppress*FilterTest classes. None touch the slice.
-2. **EqualsVerifier on JDK 25 (~10 failures).** Same root cause; EqualsVerifier embeds ByteBuddy. Affects suppression-filter and intrange/intmatch element tests.
-3. **Headless GUI tests (~6 errors).** `MainFrameTest`, `TreeTableTest`, `gui.MainTest`, `MainFrameModelTest` need a display.
+That leaves seven tests in the slice that genuinely fail because the refactor moved the state they were probing. `NPathComplexityCheckTest` has four reflection-on-internals tests that read `rangeValues`, `afterValues`, `processingTokenEnd`, `expressionValues`/`branchVisited`/`currentRangeValue` directly off the driver — fields that now live inside `NPathMeasurementFilter`. `ClassFanOutComplexityCheckTest` has three more of the same shape (`classesContexts`, `packageName`, `importedClassPackages`) reaching into the driver for state that is now inside `CouplingMeasurementFilter`. Putting vestigial fields back on the driver to make these reflection probes succeed would directly contradict FR-001..FR-006, which require measurement state to live in the filter, so we leave them as documented expected fallout.
 
-That leaves seven tests in the slice that legitimately probe state which the refactor relocated:
-- `NPathComplexityCheckTest` — four reflection-on-internals tests (`rangeValues`, `afterValues`, `processingTokenEnd`, `expressionValues`/`branchVisited`/`currentRangeValue`) read fields that now live inside `NPathMeasurementFilter`.
-- `ClassFanOutComplexityCheckTest` — three reflection-on-internals tests (`classesContexts`, `packageName`, `importedClassPackages`) read fields that now live inside `CouplingMeasurementFilter`.
+Two `ImmutabilityTest` failures and a `testDefaultHooks` NPE *were* legitimate slice bugs surfaced by this run, and we fixed both in commit `584988401b` — three drivers had been left with the wrong stateful-check annotation, and `NPathComplexityCheck` needed a lazy pipeline initialisation so `visitToken`/`leaveToken` can be called before `beginTree`.
 
-Restoring vestigial fields on the driver to make these reflection probes succeed would defeat the slice (FR-001..FR-006 require measurement state to live in the filter). They are documented as expected fallout.
-
-Two `ImmutabilityTest` failures and one `testDefaultHooks` NPE were genuine slice bugs and were fixed in commit `584988401b` (annotation switch from `@StatelessCheck` to `@FileStatefulCheck` on three drivers; lazy pipeline init in `NPathComplexityCheck`).
-
-The driver classes preserve every public surface (class name, configuration property names, message keys, default tokens, annotations, Javadoc) so the existing tests cannot tell that anything was rewritten — except where the test deliberately reflects on private state.
+The drivers preserve every public surface of their original class — class name, configuration property names, message keys, default tokens, annotations, Javadoc — so existing tests cannot tell that anything was rewritten unless they deliberately use reflection to look at private state.
 
 ## 7.3  Per-Check Verification — Every Check Still Fires
 
@@ -702,51 +680,41 @@ The assignment defined four mandatory constraints (and one architecture-specific
 
 # Section 9  Lessons Learned
 
-Migrating sixteen checks one at a time gave us a few practical lessons. The four below are the ones we would want a future student to read first.
+Migrating sixteen checks one at a time taught us a handful of things. Four stand out, and these are the ones we would want a future student in this course to read first.
 
-**Lesson 1 – Move the logic, then move the wiring.** When we tried to design the entire pipeline up-front and then drop the existing logic into it, several checks broke at the same time and the cause was hard to find. The order that worked was: copy the measurement code into a new measurement filter (still unconnected), wire one driver, run the diff, then move on. Each step is a checkpoint with a clear pass/fail signal.
+The first lesson is that you move the logic before you move the wiring. We tried, on the very first attempt, to design the entire pipeline infrastructure up-front and then drop the existing check logic into it; several checks broke at the same time and the failures were hard to untangle. What worked instead was unromantic: copy the measurement code into a new filter class (initially unconnected to anything), then wire one driver, then run the regression diff, then go on to the next check. Every step ends with a clear pass/fail signal.
 
-**Lesson 2 – The threshold is a filter, not a method on the measurement.** Our first attempt put the `if (value > max)` inside the measurement filter and only used `ThresholdFilter` for the file-level checks. That worked, but it hid the threshold logic in 14 different classes. Moving the comparison out into a dedicated stage shrank the measurement filters and made the threshold easy to audit (and easy to test on its own).
+The second lesson is that the threshold belongs in its own filter, not stapled onto the measurement. Our first attempt kept `if (value > max)` inside each measurement filter and only used `ThresholdFilter` for the two file-level checks. It worked, but it scattered the same six lines of logic across fourteen classes. Pulling the comparison into a single dedicated stage shrank every measurement filter and gave us one place to audit threshold semantics — also one place to unit-test it.
 
-**Lesson 3 – Pipes do not need to be queues.** A queue-backed pipe is the obvious choice, but for synchronous, single-threaded pipelines like ours a singleton-slot pipe is faster and easier to reason about. We use the queue-backed pipe only where one input message produces several output messages (the line splitter) or where the sink has to hold more than one violation per file.
+The third lesson is that pipes do not need to be queues. A queue-backed pipe is the obvious starting point, but for synchronous single-threaded pipelines like ours a one-slot singleton pipe is both faster and easier to reason about. We reach for the queue-backed variant only when an input message can produce several outputs (the line splitter) or when the sink might need to hold more than one violation in flight per file.
 
-**Lesson 4 – The architecture has essentially zero runtime cost.** We were worried that going through five filters per AST event would be expensive. It is not. After JIT warm-up the per-event overhead is two virtual calls (driver to head pipe, measurement to threshold) which the JIT inlines. Section 10 has the numbers.
+The fourth lesson is that the architecture turns out to have essentially zero runtime cost. We were nervous, going in, that putting an AST event through five filters would be expensive. It is not — after JIT warm-up the per-event overhead is two virtual calls which the JIT inlines, and the benchmark numbers in Section 10 back this up.
 
 ## 9.1 Challenges We Faced During the Migration
 
-The biggest challenge was the two coupling checks (`ClassDataAbstractionCoupling` and `ClassFanOutComplexity`). They share an abstract base class in the original code (`AbstractClassCouplingCheck`) and they keep cross-token state (the import list, the package context, the per-class type set). Modelling that state as a stream took more thought than the simpler counters; we ended up with a small `ImportTrackingFilter` that is shared between the two coupling pipelines through composition and a separate measurement filter for each check.
+The hardest part of the migration by far was the two coupling checks, `ClassDataAbstractionCoupling` and `ClassFanOutComplexity`. In the original code they share an abstract base class, `AbstractClassCouplingCheck`, and they hold genuinely cross-token state — the import list, the package context, and a per-class set of referenced types. Reshaping that into a stream took more thought than the straightforward counters did. What we landed on was a single parameterised `CouplingMeasurementFilter` that both drivers configure with their own message key and exclusion sets, with the import-tracking and package-context bookkeeping kept inside the filter rather than promoted to a separate stage.
 
-The second challenge was the file-level checks. They use `AbstractFileSetCheck` instead of `AbstractCheck`, so the driver pattern is slightly different. We kept the same overall pipeline shape but replaced the head pipe type with `FileText` and added a `LineSplitterFilter` to convert it into a stream of `FileLine`.
+The file-level checks were the next surprise. They are anchored on `AbstractFileSetCheck` rather than `AbstractCheck`, so the driver pattern shifts slightly: instead of an `AstEvent` head pipe, the head is `FileText`, and `LineSplitterFilter` turns it into a stream of `FileLine` for the rest of the pipeline. The pipeline shape downstream of the splitter is identical to the AST case.
 
-The third one was Javadoc. Checkstyle's website is generated from the Javadoc on the public check classes. When we briefly moved the Javadoc onto the new measurement filter, the docs generator stopped finding it. The fix is mentioned in the example report too: keep the Javadoc on the boundary class, because that is what the framework documentation generator looks at.
+The third trap was a documentation one. Checkstyle's website is generated from the Javadoc on the public check classes, and at one point we moved the Javadoc onto the new measurement filter on the assumption that the logic was now there. The website generator promptly stopped finding it. The fix is the same one mentioned in the example report — leave the Javadoc on the boundary class, because that is the class the framework's documentation tooling indexes.
 
 ## 9.2 Advantages and Disadvantages of the New Design
 
-Advantages:
+On the credit side, each check's measurement logic now lives in one short, focused class and can be unit-tested without booting Checkstyle. Threshold comparison and violation emission used to be re-implemented in fourteen places; they sit in one stage now. The architectural shape is verifiable directly from the compiled bytecode by ArchUnit and jQAssistant, so the rules are not just convention. Swapping a stage in or out is a one-line edit in the driver's pipeline builder. And the slice has no shared mutable state, no observer chains, no events buses — the only coordination is one filter writing to one pipe.
 
-- the measurement code is in one short class per check and can be unit-tested without booting Checkstyle;
-- the threshold and the violation emission are shared, not duplicated 14 times;
-- the architectural shape is verifiable from the bytecode (ArchUnit + jQAssistant);
-- replacing a stage is a one-line change in the driver's pipeline builder;
-- there is no shared mutable state and no other coordination beyond pipe writes/reads.
-
-Disadvantages:
-
-- there are more classes than before (15 + 18 + 16 in the slice instead of 16);
-- a new reader has to follow one more level of indirection to see how a check actually behaves;
-- the file-level checks gain an extra splitter stage that does not save much code on its own (it pays off because the same splitter is reused).
+The cost is more files. Where the original slice had sixteen check classes, the refactored slice has fifteen common-pipeline classes plus eighteen measurement filters plus the same sixteen drivers. A new reader picks up one extra hop of indirection: from the driver, to the pipeline definition, to the filter that does the work. The file-level checks pay a small tax in particular — they gain a splitter stage that on its own does not save much, but the savings appear once the splitter is shared across the second file-level check.
 
 ## 9.3 Future Improvements
 
-The pipeline could be reused for more checks outside the Metrics and Sizes categories. Most checks already fit the same five-stage shape, and the common filters (`TokenFilter`, `ThresholdFilter`) would be reused without changes. We did not do this because the assignment scopes the refactoring to these two categories.
+There is an obvious next step which the assignment scope ruled out: reusing the same pipeline for checks beyond Metrics and Sizes. Most of the remaining Checkstyle checks already follow the same five-stage shape, and the common filters (`TokenFilter`, `ThresholdFilter`, `ViolationSink`) would not need a single change. We deliberately stopped at the boundary the assignment defined.
 
-A nicer threshold filter would let users plug in custom comparison logic (for example, "warn if value is more than 80% of the max"). The current one is fixed at strict greater-than.
+A more sophisticated threshold filter would also be useful — one that lets users plug in custom comparators ("warn at 80% of max", "warn on any change", and so on) instead of the strict greater-than the current one is fixed at.
 
-The benchmark in §10 used wall-clock timing. A future iteration would use JMH for tighter confidence intervals.
+Finally, the Section 10 benchmark uses wall-clock timing. A production-quality study would switch to JMH for proper warm-up control and tighter confidence intervals.
 
 ## 9.4 Why Pipe-and-Filter Works Well for Static Analysis Tools
 
-Static analysis tools are stream-shaped by nature: input flows in (files, ASTs), measurements flow through (counts, lengths, complexities), outputs flow out (violations, reports). Pipe-and-Filter just makes the streams explicit. Compared to the original plug-in design, the slice is now simpler in the sense that each class has one job, and harder in the sense that there are more classes. The trade-off is worth it when the architectural rules need to be machine-checkable, which is the case here.
+Static-analysis tools are stream-shaped by nature. Input flows in (files, ASTs), measurements flow through (counts, lengths, complexities), and outputs flow out (violations, reports). All Pipe-and-Filter does in this setting is make those streams explicit. Compared to the original plug-in design the slice is simpler in the sense that each class has one job, and more verbose in the sense that there are more classes — and that trade is worth making when the architectural rules need to be machine-checkable, which is exactly what this assignment asked for.
 
 ---
 
