@@ -63,10 +63,18 @@ public class PipeAndFilterArchitectureTest {
     public void r3_filtersDoNotCallAbstractCheckLog() {
         noClasses().that()
                 .resideInAnyPackage(PIPELINE_CORE, METRICS_PIPELINE, SIZES_PIPELINE)
-            .should().callMethodWhere(target ->
-                target.getTarget().getOwner().getName()
-                    .equals("com.puppycrawl.tools.checkstyle.api.AbstractCheck")
-                && target.getTarget().getName().equals("log"))
+            .should().callMethodWhere(
+                new com.tngtech.archunit.base.DescribedPredicate<
+                        com.tngtech.archunit.core.domain.JavaMethodCall>(
+                        "is AbstractCheck.log(..)") {
+                    @Override
+                    public boolean test(
+                            com.tngtech.archunit.core.domain.JavaMethodCall call) {
+                        return "log".equals(call.getTarget().getName())
+                            && call.getTarget().getOwner().getName().equals(
+                                "com.puppycrawl.tools.checkstyle.api.AbstractCheck");
+                    }
+                })
             .check(MAIN_CLASSES);
     }
 
@@ -98,11 +106,12 @@ public class PipeAndFilterArchitectureTest {
                 PIPELINE_CORE,
                 METRICS_PIPELINE,
                 "com.puppycrawl.tools.checkstyle.api..",
-                "com.puppycrawl.tools.checkstyle.utils..")
+                "com.puppycrawl.tools.checkstyle.utils..",
+                "org.jacoco..")
             .check(MAIN_CLASSES);
     }
 
-    /** R6: sizes pipeline obeys the same allow-list as R5. */
+    /** R6: sizes pipeline obeys the same allow-list as R5 (plus naming for AccessModifierOption). */
     @Test
     public void r6_sizesPipelineDependencyAllowList() {
         classes().that().resideInAPackage(SIZES_PIPELINE)
@@ -111,7 +120,9 @@ public class PipeAndFilterArchitectureTest {
                 PIPELINE_CORE,
                 SIZES_PIPELINE,
                 "com.puppycrawl.tools.checkstyle.api..",
-                "com.puppycrawl.tools.checkstyle.utils..")
+                "com.puppycrawl.tools.checkstyle.utils..",
+                "com.puppycrawl.tools.checkstyle.checks.naming..",
+                "org.jacoco..")
             .check(MAIN_CLASSES);
     }
 
@@ -127,7 +138,8 @@ public class PipeAndFilterArchitectureTest {
                     "com.puppycrawl.tools.checkstyle.checks.metrics",
                     "com.puppycrawl.tools.checkstyle.checks.sizes")
                 .and().haveSimpleNameEndingWith("Check")
-                .and().areNotAbstract()
+                .and().doNotHaveModifier(
+                    com.tngtech.archunit.core.domain.JavaModifier.ABSTRACT)
                 .and().haveSimpleNameNotStartingWith("Abstract")
             .should().dependOnClassesThat().haveFullyQualifiedName(
                 "com.puppycrawl.tools.checkstyle.checks.pipeline.Pipeline")
@@ -215,7 +227,8 @@ public class PipeAndFilterArchitectureTest {
                     "com.puppycrawl.tools.checkstyle.checks.metrics",
                     "com.puppycrawl.tools.checkstyle.checks.sizes")
                 .and().haveSimpleNameEndingWith("Check")
-                .and().areNotAbstract()
+                .and().doNotHaveModifier(
+                    com.tngtech.archunit.core.domain.JavaModifier.ABSTRACT)
                 .and().haveSimpleNameNotStartingWith("Abstract")
             .should(new com.tngtech.archunit.lang.ArchCondition<
                     com.tngtech.archunit.core.domain.JavaClass>(

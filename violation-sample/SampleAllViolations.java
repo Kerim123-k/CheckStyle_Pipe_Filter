@@ -5,11 +5,16 @@
 
 package sample;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class SampleAllViolations {
 
@@ -18,6 +23,11 @@ public class SampleAllViolations {
     private HashSet<String> c = new HashSet<>();
     private LinkedList<String> d = new LinkedList<>();
     private TreeMap<String, String> e = new TreeMap<>();
+    private BitSet bits = new BitSet();
+    private AtomicInteger ai = new AtomicInteger();
+    private AtomicLong al = new AtomicLong();
+    private BigDecimal bd = new BigDecimal("0");
+    private BigInteger bi = new BigInteger("0");
 
     public int longMethod(int p1, int p2, int p3, int p4) {
         int x = p1 + p2;
@@ -28,10 +38,10 @@ public class SampleAllViolations {
 
     public int complex(int n) {
         int r = 0;
-        if (n > 0 && n < 10 && n != 5) {
+        if (n > 0 && n < 10 && n != 5 && n != 7) {
             r++;
         }
-        if (n > 10) {
+        if (n > 10 || n < -5 || n == 0) {
             r++;
         }
         if (n > 20) {

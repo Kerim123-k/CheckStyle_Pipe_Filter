@@ -61,7 +61,12 @@
       "Bash(chmod +x *)",
       "Bash(./mvnw -q -Dtest='RegressionDiffTest,PerCheckFireTest,PipeAndFilterArchitectureTest,FilterIsolationArchTest' test)",
       "Bash(java -version)",
-      "Read(//usr/lib/**)"
+      "Read(//usr/lib/**)",
+      "Bash(grep -E \"bin/java$\")",
+      "Read(//home/ati/.sdkman/candidates/**)",
+      "Read(//opt/**)",
+      "Bash(pacman -Q)",
+      "Bash(git restore *)"
     ]
   }
 }
