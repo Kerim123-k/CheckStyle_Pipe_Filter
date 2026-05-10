@@ -902,6 +902,8 @@ end note
 @enduml
 ```
 
+![Diagram 1](docs/screenshots/diagram-01.png)
+
 ## Appendix 2 — PlantUML: Post-Refactoring AST-Based Check Sequence Diagram
 
 ```plantuml
@@ -944,6 +946,8 @@ end note
 @enduml
 ```
 
+![Diagram 2](docs/screenshots/diagram-02.png)
+
 ## Appendix 3 — PlantUML: Pre-Refactoring File-Level Check Sequence Diagram
 
 ```plantuml
@@ -973,6 +977,8 @@ end
 CH --> User : violations list
 @enduml
 ```
+
+![Diagram 3](docs/screenshots/diagram-03.png)
 
 ## Appendix 4 — PlantUML: Post-Refactoring File-Level Check Sequence Diagram
 
@@ -1015,6 +1021,8 @@ end
 CH --> User : violations list
 @enduml
 ```
+
+![Diagram 4](docs/screenshots/diagram-04.png)
 
 ## Appendix 5 — PlantUML: C4 Level 3 Component Diagram (Pipe-and-Filter Slice)
 
@@ -1070,6 +1078,8 @@ Rel(pipeline_core, common_filters, "Carrier types used by")
 @enduml
 ```
 
+![Diagram 5](docs/screenshots/diagram-05.png)
+
 ## Appendix 6 — PlantUML: C4 Level 4 Code Diagram (MethodLengthCheck Before vs After)
 
 ```plantuml
@@ -1119,6 +1129,8 @@ package "AFTER — Pipe-and-Filter" #E0FFE0 {
 @enduml
 ```
 
+![Diagram 6](docs/screenshots/diagram-06.png)
+
 ## Appendix 7 — PlantUML: Package Dependency Comparison (Before vs After)
 
 ```plantuml
@@ -1152,6 +1164,8 @@ and violation emission.
 end note
 @enduml
 ```
+
+![Diagram 7](docs/screenshots/diagram-07.png)
 
 ```plantuml
 @startuml
@@ -1217,6 +1231,8 @@ No AbstractCheck / AbstractFileSetCheck.
 end note
 @enduml
 ```
+
+![Diagram 8](docs/screenshots/diagram-08.png)
 
 ## Appendix 8 — Performance Benchmark Chart Source (Python / matplotlib)
 
@@ -1318,6 +1334,8 @@ Pipeline o-- Filter
 @enduml
 ```
 
+![Diagram 9](docs/screenshots/diagram-09.png)
+
 ```plantuml
 @startuml uml-class-pipeline-metrics
 title Pipe-and-Filter — Metrics Package
@@ -1355,6 +1373,8 @@ ClassDataAbstractionCouplingMeasurementFilter --|> AbstractCouplingMeasurementFi
 ClassFanOutComplexityMeasurementFilter        --|> AbstractCouplingMeasurementFilter
 @enduml
 ```
+
+![Diagram 10](docs/screenshots/diagram-10.png)
 
 ```plantuml
 @startuml uml-class-pipeline-sizes
@@ -1398,6 +1418,8 @@ ParameterNumberCheck             o-- ParameterNumberMeasurementFilter
 RecordComponentNumberCheck       o-- RecordComponentNumberMeasurementFilter
 @enduml
 ```
+
+![Diagram 11](docs/screenshots/diagram-11.png)
 
 ## Appendix 10 — ArchUnit Rule Source (excerpt)
 
