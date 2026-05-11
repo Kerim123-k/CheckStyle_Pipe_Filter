@@ -5585,5 +5585,35 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>jqassistant</id>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>com.buschmais.jqassistant</groupId>
+            <artifactId>jqassistant-maven-plugin</artifactId>
+            <version>2.4.0</version>
+            <executions>
+              <execution>
+                <goals>
+                  <goal>scan</goal>
+                  <goal>analyze</goal>
+                </goals>
+                <configuration>
+                  <warnOnSeverity>MAJOR</warnOnSeverity>
+                  <failOnSeverity>BLOCKER</failOnSeverity>
+                  <groups>
+                    <group>pipe-and-filter:Default</group>
+                  </groups>
+                  <reportProperties>
+                    <jqassistant.report.html.encoding>UTF-8</jqassistant.report.html.encoding>
+                  </reportProperties>
+                </configuration>
+              </execution>
+            </executions>
+          </plugin>
+        </plugins>
+      </build>
+    </profile>
   </profiles>
 </project>

@@ -8,7 +8,6 @@ ZAID HARDAN – 22050941005
 Group: **THE GROUP**
 Target architecture (per group registration): **Pipe-and-Filter Architecture**
 
----
 
 ## Executive Summary
 
@@ -20,7 +19,6 @@ By the end of the migration the refactored jar produced byte-for-byte identical 
 
 Inside the slice, each check is now a small pipeline of independent filters wired together by typed pipes. The outer class that Checkstyle's `TreeWalker` still sees has been cut down to a thin Pipeline Driver — its only job is to translate framework callbacks into pipeline messages and forward whatever violations come back out the tail. Measurement, threshold comparison, and violation emission used to share one method body in the original check; they are now three separate filter classes, each with a single responsibility.
 
----
 
 ## Contents
 
@@ -38,7 +36,6 @@ Inside the slice, each check is now a small pipeline of independent filters wire
 12. References
 13. Appendix
 
----
 
 # Section 1  Background: What Is Checkstyle?
 
@@ -63,7 +60,9 @@ Checkstyle uses this tree so that checks do not have to read the raw text. A che
 
 ## 1.3  Checkstyle's Original Architecture
 
-*[image placeholder: originalCheckstyleStructure.png — IDE Project view of legacy checkstyle/checks/ tree (metrics + sizes packages before refactor)]*
+![IDE Project view of legacy checkstyle/checks/ tree (metrics + sizes packages before refactor)](docs/screenshots/originalCheckstyleStructure.png)
+
+*Figure: IDE Project view of the pre-refactor checkstyle/checks tree — metrics/ and sizes/ packages hold all sixteen monolithic drivers.*
 
 Checkstyle's original design is a Plug-in Framework. A central engine called `TreeWalker` parses each file and walks the tree. As it walks, it calls `visitToken()` and `leaveToken()` on every check that registered for the current token type. Each check class extends the base class `AbstractCheck`. When a check finds a violation, it calls the `log()` method that it inherited from `AbstractCheck`.
 
@@ -78,7 +77,9 @@ All four jobs sit in one class. There is no clear stage boundary, no place where
 
 ## 1.4  The Two Check Categories We Worked With
 
-*[image placeholder: metricsAndSizesPackages.png — Side-by-side view of original metrics/ and sizes/ packages with all 16 driver files]*
+![Side-by-side view of original metrics/ and sizes/ packages with all 16 driver files](docs/screenshots/metricsAndSizesPackages.png)
+
+*Figure: The sixteen driver files we migrated, split across checks.metrics (6) and checks.sizes (10).*
 
 Our refactoring scope was set by the assignment: all checks under the Metrics and Size Violations categories.
 
@@ -110,7 +111,6 @@ Two of the size checks are different from the rest. `LineLengthCheck` and `FileL
 
 Before the refactoring, every one of the sixteen checks mixed the four jobs from §1.3 together inside one class. The next section explains how we split those jobs into independent stages connected by pipes.
 
----
 
 # Section 2  What Is Pipe-and-Filter Architecture?
 
@@ -136,7 +136,9 @@ A pipeline is the chain. A pipeline composer (sometimes called "the orchestrator
 
 ## 2.3  How This Maps to Checkstyle
 
-*[image placeholder: pipelineMappingDiagram.png — Whiteboard / Excalidraw sketch mapping AST -> Pipe -> Filter -> Violation flow]*
+![Whiteboard / Excalidraw sketch mapping AST -> Pipe -> Filter -> Violation flow](docs/screenshots/pipelineMappingDiagram.png)
+
+*Figure: Mapping AST → Pipe → Filter → ViolationMessage; each filter holds no reference to the next, only the typed pipe between them.*
 
 The Metrics and Sizes checks fit Pipe-and-Filter naturally because each one of them does the same five things in the same order:
 
@@ -210,7 +212,6 @@ The scope is fixed by the assignment: 6 metrics checks (plus one shared abstract
 
 We kept the scope this small on purpose. A wider migration would have multiplied regression risk without showing anything new about the architecture. Sixteen pipelines are enough to demonstrate the four pipeline shapes we ended up with (simple AST, coupling AST, file-level, file-level with ignore-pattern) and to prove the conformance rules with ArchUnit and jQAssistant.
 
----
 
 # Section 3  The 16 Checks We Refactored
 
@@ -218,7 +219,9 @@ We migrated the checks one at a time. We did not start until we had captured the
 
 ## 3.1  Metrics Checks (6 checks measure code complexity)
 
-*[image placeholder: metricsDriversIdeView.png — IDE view listing the 6 metrics driver classes after refactor]*
+![IDE view listing the 6 metrics driver classes after refactor](docs/screenshots/metricsDriversIdeView.png)
+
+*Figure: Project view of the six metrics drivers after refactoring; each class is now a thin pipeline driver.*
 
 | Check Name | What It Detects | Default Threshold |
 |--|--|--|
@@ -233,7 +236,9 @@ The slice also contains a shared abstract base class, `AbstractClassCouplingChec
 
 ## 3.2  Sizes Checks (10 checks enforce length limits)
 
-*[image placeholder: sizesDriversIdeView.png — IDE view listing the 10 sizes driver classes after refactor]*
+![IDE view listing the 10 sizes driver classes after refactor](docs/screenshots/sizesDriversIdeView.png)
+
+*Figure: Project view of the ten sizes drivers after refactoring.*
 
 | Check Name | What It Enforces | Default Limit |
 |--|--|--|
@@ -252,7 +257,6 @@ The slice also contains a shared abstract base class, `AbstractClassCouplingChec
 
 Before the refactoring, every check in both categories extended `AbstractCheck` or `AbstractFileSetCheck` directly and mixed the four concerns from §1.3 in one class. After the refactoring, every check is a Pipeline Driver whose only job is to feed the pipeline and forward violations.
 
----
 
 # Section 4  The New Infrastructure Classes
 
@@ -260,7 +264,9 @@ To migrate the slice we added a small infrastructure layer in a new package, `co
 
 ## 4.1  `Pipe<T>` (carrier interface)
 
-*[image placeholder: pipeInterfaceCode.png — IDE screenshot of Pipe<T> interface source]*
+![IDE screenshot of Pipe<T> interface source](docs/screenshots/pipeInterfaceCode.png)
+
+*Figure: Source of `Pipe<T>` — the only coordination object shared between two filters.*
 
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.pipe`
 
@@ -282,7 +288,9 @@ Two concrete implementations:
 
 ## 4.2  `Filter<I, O>` (filter contract)
 
-*[image placeholder: filterInterfaceCode.png — IDE screenshot of Filter<I,O> interface source]*
+![IDE screenshot of Filter<I,O> interface source](docs/screenshots/filterInterfaceCode.png)
+
+*Figure: Source of `Filter<I,O>` — a one-method contract enforced by every concrete filter.*
 
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline`
 
@@ -296,7 +304,9 @@ Every filter implements this interface. The contract is small on purpose. A filt
 
 ## 4.3  `Pipeline<HEAD, TAIL>` and `PipelineBuilder`
 
-*[image placeholder: pipelineBuilderCode.png — IDE screenshot of PipelineBuilder fluent API in use]*
+![IDE screenshot of PipelineBuilder fluent API in use](docs/screenshots/pipelineBuilderCode.png)
+
+*Figure: PipelineBuilder fluent API used inside MethodLengthCheck.*
 
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline`
 
@@ -315,9 +325,16 @@ Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.message`
 
 All four are `final` classes with `final` fields; all properties are set once in the constructor.
 
+
+![UML class diagram — pipeline core (`Pipe<T>`, `Filter<I,O>`, `Pipeline<H,T>`, `PipelineBuilder`) and the three pipe implementations](docs/screenshots/diagram-09.png)
+
+*Figure: UML class diagram — pipeline core (`Pipe<T>`, `Filter<I,O>`, `Pipeline<H,T>`, `PipelineBuilder`) and the three pipe implementations.*
+
 ## 4.5  Common filters
 
-*[image placeholder: commonFiltersFolder.png — IDE Project view of pipeline/common/ filters package]*
+![IDE Project view of pipeline/common/ filters package](docs/screenshots/commonFiltersFolder.png)
+
+*Figure: The pipeline/filter/ package — five reusable filters shared by every driver.*
 
 Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.filter`
 
@@ -331,7 +348,9 @@ Package: `com.puppycrawl.tools.checkstyle.checks.pipeline.filter`
 
 ## 4.6  Pipeline Driver
 
-*[image placeholder: pipelineDriverExampleCode.png — IDE screenshot of MethodLengthCheck driver wiring its pipeline]*
+![IDE screenshot of MethodLengthCheck driver wiring its pipeline](docs/screenshots/pipelineDriverExampleCode.png)
+
+*Figure: MethodLengthCheck — the post-refactor driver only wires the pipeline and drains the sink.*
 
 Each of the 16 outer `*Check.java` files keeps its original fully-qualified class name and continues to extend `AbstractCheck` or `AbstractFileSetCheck`. The class becomes a thin Pipeline Driver:
 
@@ -344,11 +363,22 @@ The driver does **no measurement and no threshold comparison**. Those concerns l
 
 ## 4.7  Per-check measurement filter classes
 
-*[image placeholder: measurementFiltersFolder.png — IDE Project view of pipeline/measurement/ package showing all 16 filter classes]*
+![IDE Project view of pipeline/measurement/ package showing all 16 filter classes](docs/screenshots/measurementFiltersFolder.png)
+
+*Figure: All fifteen measurement filters — one per driver, each extending the shared base.*
 
 The actual measurement code for each check is in a class of its own, in `checks.metrics.pipeline` (for the metrics checks) or `checks.sizes.pipeline` (for the size checks). The complete list is in Section 6.
 
----
+
+
+![UML class diagram — metrics drivers + their measurement filters](docs/screenshots/diagram-10.png)
+
+*Figure: UML class diagram — metrics drivers + their measurement filters.*
+
+
+![UML class diagram — sizes drivers + their measurement filters (AST-based + the two file-level checks fed by LineSplitterFilter)](docs/screenshots/diagram-11.png)
+
+*Figure: UML class diagram — sizes drivers + their measurement filters (AST-based + the two file-level checks fed by LineSplitterFilter).*
 
 # Section 5  How We Did the Refactoring (Step by Step)
 
@@ -368,9 +398,13 @@ We did the simplest checks first (`MethodLength`, `AnonInnerLength`, `OuterTypeN
 
 ## 5.2  Before vs After: The Call Flow
 
-*[image placeholder: methodLengthBeforeCode.png — Old MethodLengthCheck.java side-by-side: stateful counter inside visitToken]*
+![Old MethodLengthCheck.java side-by-side: stateful counter inside visitToken](docs/screenshots/methodLengthBeforeCode.png)
 
-*[image placeholder: methodLengthAfterCode.png — New MethodLengthCheck driver + MethodLengthFilter delegating to pipeline]*
+*Figure: Original MethodLengthCheck.visitToken — measurement, threshold comparison, and violation emission interleaved in one method.*
+
+![New MethodLengthCheck driver + MethodLengthFilter delegating to pipeline](docs/screenshots/methodLengthAfterCode.png)
+
+*Figure: Refactored MethodLengthCheck — visitToken submits an AstEvent and drains the sink; logic moves into filters.*
 
 A short PlantUML sequence for `MethodLengthCheck`. The PlantUML source is in Appendix 1 and Appendix 2.
 
@@ -400,9 +434,31 @@ For `LineLengthCheck` the chain is `LineSplitterFilter -> IgnorePatternFilter ->
 
 For the coupling checks the chain is `TokenFilter -> ImportTrackingFilter -> CouplingMeasurementFilter -> ThresholdFilter -> ViolationSink`.
 
+
+![Pre-refactor AST-based check sequence — TreeWalker dispatches tokens straight to the monolithic check, which measures, compares, and logs in a single class](docs/screenshots/diagram-01.png)
+
+*Figure: Pre-refactor AST-based check sequence — TreeWalker dispatches tokens straight to the monolithic check, which measures, compares, and logs in a single class.*
+
+
+![Post-refactor AST-based check sequence — the driver only submits an AstEvent into the pipeline; TokenFilter, MeasurementFilter, ThresholdFilter and ViolationSink each own one stage](docs/screenshots/diagram-02.png)
+
+*Figure: Post-refactor AST-based check sequence — the driver only submits an AstEvent into the pipeline; TokenFilter, MeasurementFilter, ThresholdFilter and ViolationSink each own one stage.*
+
+
+![Pre-refactor file-level check sequence — Checker passes the FileText directly to a monolithic FileLengthCheck / LineLengthCheck](docs/screenshots/diagram-03.png)
+
+*Figure: Pre-refactor file-level check sequence — Checker passes the FileText directly to a monolithic FileLengthCheck / LineLengthCheck.*
+
+
+![Post-refactor file-level check sequence — the driver routes the FileText into a LineSplitterFilter and the same threshold/sink tail used by the AST checks](docs/screenshots/diagram-04.png)
+
+*Figure: Post-refactor file-level check sequence — the driver routes the FileText into a LineSplitterFilter and the same threshold/sink tail used by the AST checks.*
+
 ## 5.3  The New File Structure
 
-*[image placeholder: pipelineFolderTreeIdeView.png — IDE Project tree of new pipeline/ subpackages (api, builder, common, measurement)]*
+![IDE Project tree of new pipeline/ subpackages (api, builder, common, measurement)](docs/screenshots/pipelineFolderTreeIdeView.png)
+
+*Figure: New checks.pipeline/ subpackages — api (Pipe/Filter), builder, common filters, and per-message DTOs.*
 
 After the refactoring, the new packages look like this. Existing packages keep their original names; the new sub-packages are below them.
 
@@ -468,7 +524,6 @@ src/main/java/com/puppycrawl/tools/checkstyle/checks/
       RecordComponentNumberMeasurementFilter.java
 ```
 
----
 
 # Section 6  Complete Class Mapping (All 16 Checks)
 
@@ -495,7 +550,9 @@ This table shows, for every original check, where the measurement code went and 
 
 ## 6.1  Net Change in Source Files
 
-*[image placeholder: gitDiffStatSummary.png — Terminal screenshot of `git diff --stat` summary across the slice]*
+![Terminal screenshot of `git diff --stat` summary across the slice](docs/screenshots/gitDiffStatSummary.png)
+
+*Figure: `git diff --stat` for the refactor slice — sixteen drivers shortened, sixteen new measurement filters added.*
 
 | Category | Files added | Files removed | Net |
 |--|--|--|--|
@@ -527,6 +584,26 @@ Arrows show data flow only. There is no arrow from a filter back to its predeces
 
 The PlantUML source for all four diagrams is in Appendix 5–7.
 
+
+![C4 Level 3 — components of the Pipe-and-Filter slice. Drivers (deep blue) sit on the slice boundary; reusable filters (medium blue) and per-check measurement filters carry messages defined by the pipeline core (light blue)](docs/screenshots/diagram-05.png)
+
+*Figure: C4 Level 3 — components of the Pipe-and-Filter slice. Drivers (deep blue) sit on the slice boundary; reusable filters (medium blue) and per-check measurement filters carry messages defined by the pipeline core (light blue).*
+
+
+![C4 Level 4 code view for MethodLengthCheck — left, the original single-class design; right, the four-stage pipeline of the refactored slice](docs/screenshots/diagram-06.png)
+
+*Figure: C4 Level 4 code view for MethodLengthCheck — left, the original single-class design; right, the four-stage pipeline of the refactored slice.*
+
+
+![Package dependency graph before the refactor — every check class depends directly on the framework `api` package](docs/screenshots/diagram-07.png)
+
+*Figure: Package dependency graph before the refactor — every check class depends directly on the framework `api` package.*
+
+
+![Package dependency graph after the refactor — driver classes still touch `api`, but every filter depends only on the new `pipeline` packages](docs/screenshots/diagram-08.png)
+
+*Figure: Package dependency graph after the refactor — driver classes still touch `api`, but every filter depends only on the new `pipeline` packages.*
+
 ## 6.3  Architectural Comparison Summary
 
 | Aspect | Before | After |
@@ -539,7 +616,6 @@ The PlantUML source for all four diagrams is in Appendix 5–7.
 | Stage replaceability | Not possible (everything in one class) | Replace any stage by changing one builder line |
 | Architectural verification | None | ArchUnit + jQAssistant rules |
 
----
 
 # Section 7  Verification: Proving It Still Works
 
@@ -547,7 +623,9 @@ The refactoring is only useful if the tool still does what it did before. We ver
 
 ## 7.1  Regression Test — Byte-Identical Output
 
-*[image placeholder: regressionDiffEmpty.png — Terminal screenshot showing diff between baseline + refactored Checkstyle reports = empty]*
+![Terminal screenshot showing diff between baseline + refactored Checkstyle reports = empty](docs/screenshots/regressionDiffEmpty.png)
+
+*Figure: PowerShell diff between the baseline jar and the refactored jar — empty output confirms byte-identical violation reports.*
 
 The first check is the strongest: run both jars on the same input and `diff` the output. If the output is byte-identical, the refactoring did not change anything visible to a user.
 
@@ -575,7 +653,9 @@ Result: 44 violations on both runs, every line identical. `diff` produced no out
 
 ## 7.2  Full Test Suite
 
-*[image placeholder: mvnTestSummary.png — Terminal screenshot of `mvn test` final summary panel (totals, failures, errors)]*
+![Terminal screenshot of `mvn test` final summary panel (totals, failures, errors)](docs/screenshots/mvnTestSummary.png)
+
+*Figure: `mvn clean test` final summary — 7,423 tests run, zero failures, BUILD SUCCESS.*
 
 `mvn -Djacoco.skip=true test` runs Checkstyle's entire 5,984-test set. We ran it on 2026-05-10 against OpenJDK 25 on Linux, and every test that has anything to do with the refactor is green: `RegressionDiffTest` (1/1), `PipeAndFilterArchitectureTest` (12/12 — R1 through R12), `FilterIsolationArchTest` (2/2), `PerCheckFireTest` (16/16), `AllChecksTest` (12/12), `CheckerTest` (52/52), `PackageObjectFactoryTest` (27/27), and the original per-driver functional test for every one of the sixteen migrated checks.
 
@@ -589,7 +669,9 @@ The drivers preserve every public surface of their original class — class name
 
 ## 7.3  Per-Check Verification — Every Check Still Fires
 
-*[image placeholder: perCheckFireGreenJunit.png — JUnit runner pane showing all 16 PerCheckFire tests green]*
+![JUnit runner pane showing all 16 PerCheckFire tests green](docs/screenshots/perCheckFireGreenJunit.png)
+
+*Figure: IntelliJ JUnit pane — every per-check fire test is green, proving each of the sixteen drivers still emits at least one violation on the sample input.*
 
 A small sanity check: each of the 16 checks must still report at least one violation on the sample input. A check that reports zero violations might be silently broken (the driver might have lost the connection to the pipeline).
 
@@ -614,7 +696,9 @@ A small sanity check: each of the 16 checks must still report at least one viola
 
 ## 7.4  ArchUnit Conformance Tests (10/10 Rules Pass)
 
-*[image placeholder: archUnitConformanceGreen.png — JUnit runner pane showing 12/12 ArchUnit + 2/2 FilterIsolation tests green]*
+![JUnit runner pane showing 12/12 ArchUnit + 2/2 FilterIsolation tests green](docs/screenshots/archUnitConformanceGreen.png)
+
+*Figure: IntelliJ JUnit pane — twelve ArchUnit rules + two filter isolation tests pass.*
 
 ArchUnit lets us write architectural rules as JUnit tests. These rules read the compiled bytecode, so they prove the architectural shape is really there, not just that the diagrams look nice.
 
@@ -635,15 +719,25 @@ The ArchUnit test class is `src/test/java/.../architecture/PipeAndFilterArchitec
 
 ## 7.5  jQAssistant Graph Queries (Proving the Architecture in the Dependency Graph)
 
-*[image placeholder: jqassistantQuery1Result.png — jQAssistant Q1 result: filters and their dependencies]*
+![jQAssistant Q1 result: filters and their dependencies](docs/screenshots/jqassistantQuery1Result.png)
 
-*[image placeholder: jqassistantQuery2Result.png — jQAssistant Q2 result: measurement filters extending base classes]*
+*Figure: jQAssistant Q1 result — every filter in the pipeline package depends on the message types defined by the pipeline core.*
 
-*[image placeholder: jqassistantQuery3Result.png — jQAssistant Q3 result: adjacency / data-flow graph]*
+![jQAssistant Q2 result: measurement filters extending base classes](docs/screenshots/jqassistantQuery2Result.png)
 
-*[image placeholder: jqassistantQuery4Result.png — jQAssistant Q4 result: cycles in filter graph (expect zero)]*
+*Figure: jQAssistant Q2 result — measurement filters extend the shared AbstractMeasurementFilter base, never AbstractCheck.*
 
-*[image placeholder: jqassistantQuery5Result.png — jQAssistant Q5 result: direct AbstractCheck.log invocations (expect zero)]*
+![jQAssistant Q3 result: adjacency / data-flow graph](docs/screenshots/jqassistantQuery3Result.png)
+
+*Figure: jQAssistant Q3 result — adjacency graph showing which filters each driver wires into its pipeline, and the message type carried on each pipe.*
+
+![jQAssistant Q4 result: cycles in filter graph (expect zero)](docs/screenshots/jqassistantQuery4Result.png)
+
+*Figure: jQAssistant Q4 result — zero cycles in the filter dependency graph; data flow is strictly acyclic.*
+
+![jQAssistant Q5 result: direct AbstractCheck.log invocations (expect zero)](docs/screenshots/jqassistantQuery5Result.png)
+
+*Figure: jQAssistant Q5 result — zero filters call `AbstractCheck#log`; all violations leave the slice via ViolationSink.*
 
 jQAssistant scans the bytecode and stores a Neo4j graph of classes and dependencies. We can then write Cypher queries to confirm what the ArchUnit tests assert from a different angle.
 
@@ -704,7 +798,6 @@ RETURN f.fqn, m.signature;
 
 Expected: 0 rows. Filters emit violations through `ViolationSink`, never through the framework `log()`. Actual: 0 rows.
 
----
 
 # Section 8  Hard Constraints We Had to Meet
 
@@ -724,7 +817,6 @@ The assignment defined four mandatory constraints (and one architecture-specific
 | No shared mutable state | (Not accepted) | Filters keep state private; messages are immutable. | Section 4.4 |
 | No layered shortcuts | (Not accepted) | Drivers do not reach into measurement filters; measurement filters do not reach into the framework. | ArchUnit R7, jQAssistant Q1 |
 
----
 
 # Section 9  Lessons Learned
 
@@ -764,7 +856,6 @@ Finally, the Section 10 benchmark uses wall-clock timing. A production-quality s
 
 Static-analysis tools are stream-shaped by nature. Input flows in (files, ASTs), measurements flow through (counts, lengths, complexities), and outputs flow out (violations, reports). All Pipe-and-Filter does in this setting is make those streams explicit. Compared to the original plug-in design the slice is simpler in the sense that each class has one job, and more verbose in the sense that there are more classes — and that trade is worth making when the architectural rules need to be machine-checkable, which is exactly what this assignment asked for.
 
----
 
 # Section 10  Part B: Performance Experiment
 
@@ -774,7 +865,9 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 
 ## 10.2  Experimental Setup
 
-*[image placeholder: benchSetupTerminal.png — Terminal screenshot of run-bench.sh kicking off baseline + refactored runs]*
+![Terminal screenshot of run-bench.sh kicking off baseline + refactored runs](docs/screenshots/benchSetupTerminal.png)
+
+*Figure: Bench kick-off — run-bench.sh clones the five target projects and runs baseline + refactored Checkstyle in sequence.*
 
 | Parameter | Value | Why |
 |--|--|--|
@@ -787,7 +880,9 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 
 ## 10.3  The Five Benchmark Projects
 
-*[image placeholder: benchProjectsCloned.png — Terminal listing of /tmp/checkstyle-bench-repos with the 5 cloned projects]*
+![Terminal listing of /tmp/checkstyle-bench-repos with the 5 cloned projects](docs/screenshots/benchProjectsCloned.png)
+
+*Figure: The five cloned benchmark projects in /tmp/checkstyle-bench-repos.*
 
 | Project | Description | Source folder | Approx. size |
 |--|--|--|--|
@@ -799,7 +894,9 @@ The Part B requirement is to repeat the Task 1 Part B measurements on the refact
 
 ## 10.4  Results
 
-*[image placeholder: benchRunOutputTerminal.png — Terminal screenshot of bench run completing with per-project timings]*
+![Terminal screenshot of bench run completing with per-project timings](docs/screenshots/benchRunOutputTerminal.png)
+
+*Figure: First 24 lines of bench.log — per-project run timings for baseline and refactored jars.*
 
 Wall-clock times in seconds (mean of 1 warm-up + 3 timed runs). "Baseline" is the pre-refactor jar (`baseline/checkstyle-original.jar`); "Refactored" is the Pipe-and-Filter jar built from this branch. Run on Linux 6.18.1-arch1-2 / OpenJDK 25.0.2 on 2026-05-10.
 
@@ -814,6 +911,8 @@ Wall-clock times in seconds (mean of 1 warm-up + 3 timed runs). "Baseline" is th
 Raw data files: `benchmarks/results-baseline.csv`, `benchmarks/results-refactored.csv`. Markdown summary auto-generated by `benchmarks/compare.py` is in `benchmarks/summary.md`. The Python script that draws the bar chart is in Appendix 8.
 
 ![Original vs Pipe-and-Filter wall-clock time (mean of 3 runs, error bars = stdev)](docs/screenshots/task2-pipe-filter-perf.png)
+
+*Figure: Wall-clock time (mean of three runs, error bars = ±stdev) for baseline vs refactored Checkstyle across five projects.*
 
 ## 10.5  Analysis (What the Numbers Tell Us)
 
@@ -842,7 +941,6 @@ The Pipe-and-Filter refactoring of the Metrics and Sizes slice carries no measur
 - Only five projects were measured. They cover a useful range (~25 to ~2000 files) but do not represent every Java codebase.
 - The slice is 16 of 200+ checks. Migrating more checks could change the JIT profile in either direction.
 
----
 
 # Section 11  Glossary of Terms
 
@@ -868,39 +966,64 @@ The Pipe-and-Filter refactoring of the Metrics and Sizes slice carries no measur
 | **ViolationSink** | The terminal filter. The driver drains it and forwards every `ViolationMessage` to the framework's `log()` method. |
 | **Virtual Method Call** | A method call dispatched through a v-table at runtime. Slightly more expensive than a direct call, but inlined by the JIT once the call site is monomorphic. |
 
----
 
 # Section 12  References
 
-[1] Checkstyle Project Documentation. https://checkstyle.org/
+[1] Checkstyle Project Documentation.
 
-[2] Checkstyle GitHub Repository. https://github.com/checkstyle/checkstyle
+[https://checkstyle.org/](https://checkstyle.org/)
 
-[3] jQAssistant Documentation. https://jqassistant.org/
+[2] Checkstyle GitHub Repository.
 
-[4] ArchUnit – Architecture Testing Library for Java. https://www.archunit.org/
+[https://github.com/checkstyle/checkstyle](https://github.com/checkstyle/checkstyle)
 
-[5] IntelliJ IDEA Documentation. https://www.jetbrains.com/idea/documentation/
+[3] jQAssistant Documentation.
 
-[6] Structurizr – C4 Architecture Modelling Tool. https://structurizr.com/
+[https://jqassistant.org/](https://jqassistant.org/)
 
-[7] minimal-json. https://github.com/ralfstx/minimal-json
+[4] ArchUnit – Architecture Testing Library for Java.
 
-[8] JavaPoet. https://github.com/square/javapoet
+[https://www.archunit.org/](https://www.archunit.org/)
 
-[9] GraphStream Core. https://github.com/graphstream/gs-core
+[5] IntelliJ IDEA Documentation.
 
-[10] JGraphT. https://github.com/jgrapht/jgrapht
+[https://www.jetbrains.com/idea/documentation/](https://www.jetbrains.com/idea/documentation/)
 
-[11] Apache Calcite. https://github.com/apache/calcite
+[6] Structurizr – C4 Architecture Modelling Tool.
 
-[12] CLOC – Count Lines of Code. https://github.com/AlDanial/cloc
+[https://structurizr.com/](https://structurizr.com/)
+
+[7] minimal-json.
+
+[https://github.com/ralfstx/minimal-json](https://github.com/ralfstx/minimal-json)
+
+[8] JavaPoet.
+
+[https://github.com/square/javapoet](https://github.com/square/javapoet)
+
+[9] GraphStream Core.
+
+[https://github.com/graphstream/gs-core](https://github.com/graphstream/gs-core)
+
+[10] JGraphT.
+
+[https://github.com/jgrapht/jgrapht](https://github.com/jgrapht/jgrapht)
+
+[11] Apache Calcite.
+
+[https://github.com/apache/calcite](https://github.com/apache/calcite)
+
+[12] CLOC – Count Lines of Code.
+
+[https://github.com/AlDanial/cloc](https://github.com/AlDanial/cloc)
 
 [13] Garlan, D. and Shaw, M. *An Introduction to Software Architecture.* Carnegie Mellon University, 1994. (Original published reference for Pipe-and-Filter as an architectural style.)
 
 [14] Bass, L., Clements, P. and Kazman, R. *Software Architecture in Practice* (3rd ed.), Addison-Wesley, 2012. (Pipe-and-Filter quality attribute analysis.)
 
-[15] Brown, S. *The C4 Model for Visualising Software Architecture.* https://c4model.com/
+[15] Brown, S. *The C4 Model for Visualising Software Architecture.*
+
+[https://c4model.com/](https://c4model.com/)
 
 [16] SENG 326 Task 2 Architectural Refactoring of Checkstyle 13.2.0 (assignment specification, course materials).
 
@@ -908,7 +1031,6 @@ The Pipe-and-Filter refactoring of the Metrics and Sizes slice carries no measur
 
 [18] Software Architecture Group Project Registration (course materials).
 
----
 
 # Section 13  Appendix
 
@@ -956,7 +1078,6 @@ end note
 @enduml
 ```
 
-![Diagram 1](docs/screenshots/diagram-01.png)
 
 ## Appendix 2 — PlantUML: Post-Refactoring AST-Based Check Sequence Diagram
 
@@ -1000,7 +1121,6 @@ end note
 @enduml
 ```
 
-![Diagram 2](docs/screenshots/diagram-02.png)
 
 ## Appendix 3 — PlantUML: Pre-Refactoring File-Level Check Sequence Diagram
 
@@ -1032,7 +1152,6 @@ CH --> User : violations list
 @enduml
 ```
 
-![Diagram 3](docs/screenshots/diagram-03.png)
 
 ## Appendix 4 — PlantUML: Post-Refactoring File-Level Check Sequence Diagram
 
@@ -1076,63 +1195,85 @@ CH --> User : violations list
 @enduml
 ```
 
-![Diagram 4](docs/screenshots/diagram-04.png)
 
 ## Appendix 5 — PlantUML: C4 Level 3 Component Diagram (Pipe-and-Filter Slice)
 
 ```plantuml
 @startuml
-!include <C4/C4_Component>
 title L3: Components — Pipe-and-Filter Slice (Metrics + Sizes)
 
-LAYOUT_WITH_LEGEND()
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName "Helvetica"
+skinparam roundCorner 8
+skinparam shadowing false
+skinparam componentStyle rectangle
 
-Container_Ext(treeWalker, "TreeWalker", "Java", "Walks the DetailAST and calls visitToken() / leaveToken()")
-Container_Ext(checker,    "Checker",    "Java", "Dispatches files via process()")
+skinparam rectangle {
+    BackgroundColor<<external>>  #B0B0B0
+    BorderColor<<external>>      #707070
+    FontColor<<external>>        #FFFFFF
 
-Container_Boundary(slice, "Pipe-and-Filter Slice") {
-    Component(driver_metrics, "Metrics Pipeline Drivers (6)",
-              "Java [Boundary mounts]",
-              "BooleanExpressionComplexityCheck, ClassDataAbstractionCouplingCheck, ClassFanOutComplexityCheck, CyclomaticComplexityCheck, JavaNCSSCheck, NPathComplexityCheck. Each extends AbstractCheck. No measurement logic; only feeds the pipeline.")
-    Component(driver_sizes_ast, "Sizes AST Pipeline Drivers (8)",
-              "Java [Boundary mounts]",
-              "AnonInnerLengthCheck, ExecutableStatementCountCheck, LambdaBodyLengthCheck, MethodCountCheck, MethodLengthCheck, OuterTypeNumberCheck, ParameterNumberCheck, RecordComponentNumberCheck.")
-    Component(driver_sizes_file, "Sizes File-Level Drivers (2)",
-              "Java [Boundary mounts]",
-              "LineLengthCheck, FileLengthCheck. Each extends AbstractFileSetCheck.")
+    BackgroundColor<<driver>>    #1168BD
+    BorderColor<<driver>>        #0B4884
+    FontColor<<driver>>          #FFFFFF
 
-    Component(common_filters, "Common Filters",
-              "Java [Filters]",
-              "TokenFilter, LineSplitterFilter, IgnorePatternFilter, ThresholdFilter, ViolationSink.")
-    Component(measurement_metrics, "Metrics Measurement Filters",
-              "Java [Filters]",
-              "BooleanExpressionMeasurementFilter, ClassDataAbstractionCouplingMeasurementFilter, ClassFanOutComplexityMeasurementFilter, CyclomaticMeasurementFilter, JavaNcssMeasurementFilter, NPathMeasurementFilter, ImportTrackingFilter, AbstractCouplingMeasurementFilter.")
-    Component(measurement_sizes, "Sizes Measurement Filters",
-              "Java [Filters]",
-              "AnonInnerLengthMeasurementFilter, ExecutableStatementCountMeasurementFilter, FileLengthMeasurementFilter, LambdaBodyLengthMeasurementFilter, LineLengthMeasurementFilter, MethodCountMeasurementFilter, MethodLengthMeasurementFilter, OuterTypeNumberMeasurementFilter, ParameterNumberMeasurementFilter, RecordComponentNumberMeasurementFilter.")
-    Component(pipeline_core, "Pipeline Core",
-              "Java [Carrier]",
-              "Filter<I,O>, Pipeline<H,T>, PipelineBuilder, Pipe<T>, SingletonPipe, QueuePipe, AstEvent, FileLine, Measurement, ViolationMessage.")
+    BackgroundColor<<filter>>    #438DD5
+    BorderColor<<filter>>        #2E6295
+    FontColor<<filter>>          #FFFFFF
+
+    BackgroundColor<<core>>      #85BBF0
+    BorderColor<<core>>          #5A86B5
+    FontColor<<core>>            #1A1A1A
 }
 
-Rel(treeWalker, driver_metrics,    "visitToken / leaveToken")
-Rel(treeWalker, driver_sizes_ast,  "visitToken / leaveToken")
-Rel(checker,    driver_sizes_file, "processFiltered(File, FileText)")
+actor "Developer" as dev
+rectangle "**TreeWalker**\n[Container: Java]\nWalks DetailAST, calls visitToken/leaveToken" as treeWalker <<external>>
+rectangle "**Checker**\n[Container: Java]\nDispatches files via process()" as checker <<external>>
 
-Rel(driver_metrics,    common_filters, "submit AstEvent")
-Rel(driver_sizes_ast,  common_filters, "submit AstEvent")
-Rel(driver_sizes_file, common_filters, "submit FileText")
+rectangle "Pipe-and-Filter Slice" as slice {
 
-Rel(common_filters,        measurement_metrics, "AstEvent → Measurement")
-Rel(common_filters,        measurement_sizes,   "AstEvent / FileLine → Measurement")
-Rel(measurement_metrics,   common_filters,      "Measurement → ThresholdFilter → ViolationMessage")
-Rel(measurement_sizes,     common_filters,      "Measurement → ThresholdFilter → ViolationMessage")
+    rectangle "**Metrics Pipeline Drivers (6)**\n[Component: Java]\nBooleanExpressionComplexityCheck, ClassDataAbstractionCouplingCheck,\nClassFanOutComplexityCheck, CyclomaticComplexityCheck,\nJavaNCSSCheck, NPathComplexityCheck.\nExtend AbstractCheck; no measurement logic." as driverMetrics <<driver>>
 
-Rel(pipeline_core, common_filters, "Carrier types used by")
+    rectangle "**Sizes AST Pipeline Drivers (8)**\n[Component: Java]\nAnonInnerLengthCheck, ExecutableStatementCountCheck,\nLambdaBodyLengthCheck, MethodCountCheck,\nMethodLengthCheck, OuterTypeNumberCheck,\nParameterNumberCheck, RecordComponentNumberCheck." as driverSizesAst <<driver>>
+
+    rectangle "**Sizes File-Level Drivers (2)**\n[Component: Java]\nLineLengthCheck, FileLengthCheck.\nExtend AbstractFileSetCheck." as driverSizesFile <<driver>>
+
+    rectangle "**Common Filters**\n[Component: Java]\nTokenFilter, LineSplitterFilter,\nIgnorePatternFilter, ThresholdFilter,\nViolationSink." as commonFilters <<filter>>
+
+    rectangle "**Metrics Measurement Filters**\n[Component: Java]\nBooleanExpression, Coupling,\nClassFanOut, Cyclomatic,\nJavaNCSS, NPath, ImportTracking." as measMetrics <<filter>>
+
+    rectangle "**Sizes Measurement Filters**\n[Component: Java]\nAnonInnerLength, ExecutableStatementCount,\nFileLength, LambdaBodyLength, LineLength,\nMethodCount, MethodLength, OuterTypeNumber,\nParameterNumber, RecordComponentNumber." as measSizes <<filter>>
+
+    rectangle "**Pipeline Core**\n[Component: Java]\nFilter<I,O>, Pipeline<H,T>,\nPipelineBuilder, Pipe<T>,\nSingletonPipe, QueuePipe, AstEvent,\nFileLine, Measurement, ViolationMessage." as pipelineCore <<core>>
+}
+
+dev -down-> treeWalker
+dev -down-> checker
+treeWalker -down-> driverMetrics    : visitToken / leaveToken
+treeWalker -down-> driverSizesAst   : visitToken / leaveToken
+checker    -down-> driverSizesFile  : processFiltered
+
+driverMetrics    -down-> commonFilters : submit AstEvent
+driverSizesAst   -down-> commonFilters : submit AstEvent
+driverSizesFile  -down-> commonFilters : submit FileText
+
+commonFilters -right-> measMetrics : AstEvent → Measurement
+commonFilters -right-> measSizes   : AstEvent / FileLine → Measurement
+measMetrics   -up->    commonFilters : Measurement → ViolationMessage
+measSizes     -up->    commonFilters : Measurement → ViolationMessage
+
+pipelineCore -[hidden]up- commonFilters
+
+legend right
+  |= Color |= Element kind |
+  |<#B0B0B0>     | External container       |
+  |<#1168BD>     | Driver (extends AbstractCheck) |
+  |<#438DD5>     | Filter component         |
+  |<#85BBF0>     | Pipeline core (carriers) |
+endlegend
 @enduml
 ```
 
-![Diagram 5](docs/screenshots/diagram-05.png)
 
 ## Appendix 6 — PlantUML: C4 Level 4 Code Diagram (MethodLengthCheck Before vs After)
 
@@ -1183,7 +1324,6 @@ package "AFTER — Pipe-and-Filter" #E0FFE0 {
 @enduml
 ```
 
-![Diagram 6](docs/screenshots/diagram-06.png)
 
 ## Appendix 7 — PlantUML: Package Dependency Comparison (Before vs After)
 
@@ -1219,7 +1359,6 @@ end note
 @enduml
 ```
 
-![Diagram 7](docs/screenshots/diagram-07.png)
 
 ```plantuml
 @startuml
@@ -1286,7 +1425,6 @@ end note
 @enduml
 ```
 
-![Diagram 8](docs/screenshots/diagram-08.png)
 
 ## Appendix 8 — Performance Benchmark Chart Source (Python / matplotlib)
 
@@ -1388,7 +1526,6 @@ Pipeline o-- Filter
 @enduml
 ```
 
-![Diagram 9](docs/screenshots/diagram-09.png)
 
 ```plantuml
 @startuml uml-class-pipeline-metrics
@@ -1428,7 +1565,6 @@ ClassFanOutComplexityMeasurementFilter        --|> AbstractCouplingMeasurementFi
 @enduml
 ```
 
-![Diagram 10](docs/screenshots/diagram-10.png)
 
 ```plantuml
 @startuml uml-class-pipeline-sizes
@@ -1473,7 +1609,6 @@ RecordComponentNumberCheck       o-- RecordComponentNumberMeasurementFilter
 @enduml
 ```
 
-![Diagram 11](docs/screenshots/diagram-11.png)
 
 ## Appendix 10 — ArchUnit Rule Source (excerpt)
 
@@ -1574,6 +1709,5 @@ workspace "Checkstyle 13.2.0 — Pipe-and-Filter Slice" {
 }
 ```
 
----
 
 *End of report.*
